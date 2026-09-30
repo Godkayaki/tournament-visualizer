@@ -13,33 +13,54 @@ if (!KEY) { console.error('Missing TOPDECK_API_KEY'); process.exit(1); }
 const FORMAT = process.env.FORMAT || 'EDH';
 const START = Math.floor(Date.parse(process.env.START_DATE || '2023-01-01') / 1000);
 const NOW = Math.floor(Date.now() / 1000);
-const STEP = 30 * 86400; // 30-day windows keep each response a manageable size
+const STEP = 14 * 86400; // 14-day windows keep each response small
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function query(start, end) {
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const res = await fetch('https://topdeck.gg/api/v2/tournaments', {
-      method: 'POST',
-      headers: { Authorization: KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        game: 'Magic: The Gathering',
-        format: FORMAT,
-        start,
-        end,
-        columns: ['name', 'id', 'decklist', 'wins', 'draws', 'losses'],
-      }),
-    });
-    if (res.status === 429) {
-      const j = await res.json().catch(() => ({}));
-      await sleep((j.retryAfterSeconds || 30) * 1000 + 500);
-      continue;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      const res = await fetch('https://topdeck.gg/api/v2/tournaments', {
+        method: 'POST',
+        headers: { Authorization: KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          game: 'Magic: The Gathering',
+          format: FORMAT,
+          start,
+          end,
+          columns: ['name', 'id', 'decklist', 'wins', 'draws', 'losses'],
+        }),
+        signal: AbortSignal.timeout(120_000),
+      });
+      if (res.status === 429) {
+        const j = await res.json().catch(() => ({}));
+        await sleep((j.retryAfterSeconds || 30) * 1000 + 500);
+        attempt--; // rate limits don't count as failed attempts
+        continue;
+      }
+      if (res.status >= 500) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${await res.text()}`); // 4xx: retrying won't help
+      return await res.json();
+    } catch (err) {
+      const fatal = /^HTTP 4/.test(err.message);
+      console.warn(`  attempt ${attempt} failed (${err.cause?.code || err.message})`);
+      if (fatal || attempt === 4) throw err;
+      await sleep(attempt * 5000);
     }
-    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-    return res.json();
   }
-  throw new Error('Too many rate-limit retries');
+}
+
+// If a window keeps failing (often because the response is too big), split it in half.
+async function fetchRange(start, end) {
+  try {
+    return await query(start, end);
+  } catch (err) {
+    if (/^HTTP 4/.test(err.message) || end - start < 86400) throw err;
+    const mid = Math.floor((start + end) / 2);
+    console.warn(`  splitting ${start}-${end}`);
+    return [...(await fetchRange(start, mid)), ...(await fetchRange(mid + 1, end))];
+  }
 }
 
 // Commander names from structured deck data, falling back to the "~~Commanders~~" text block.
@@ -56,7 +77,7 @@ function commanders(p) {
 const seen = new Map();
 for (let s = START; s < NOW; s += STEP) {
   const e = Math.min(s + STEP - 1, NOW);
-  const batch = await query(s, e);
+  const batch = await fetchRange(s, e);
   for (const t of batch) seen.set(t.TID, t);
   console.log(`${new Date(s * 1000).toISOString().slice(0, 10)}: ${batch.length} tournaments`);
   await sleep(2000); // be gentle: bulk endpoint has a low rate limit
