@@ -6,52 +6,106 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const fmtDate = (ts) => new Date(ts * 1000).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const place = (t) => [t.c, t.s].filter(Boolean).join(', ') || 'Unknown location';
 
-// Hex bin resolution follows zoom: coarse from far away, finer as you get close.
-const resFor = (alt) => (alt > 1.6 ? 3 : alt > 0.7 ? 4 : 5);
-let res = 3;
+const state = { minPlayers: 50, months: 3 }; // defaults; must match the .on buttons in index.html
+let all = [];
+let tier = -1;
+
+// Cluster radius in degrees for each zoom tier (camera altitude in globe radii).
+const RADII = [14, 8, 4, 1.8, 0.7, 0.15];
+const tierOf = (alt) => (alt > 2.2 ? 0 : alt > 1.6 ? 1 : alt > 1.0 ? 2 : alt > 0.6 ? 3 : alt > 0.3 ? 4 : 5);
 
 const world = Globe()($('globe'))
-  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
+  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
   .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
   .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-  .atmosphereColor('#5b8cff')
-  .hexBinPointLat('lat')
-  .hexBinPointLng('lng')
-  .hexBinPointWeight(() => 1)
-  .hexBinResolution(res)
-  .hexMargin(0.2)
-  .hexTopColor((d) => heat(d.sumWeight))
-  .hexSideColor((d) => heat(d.sumWeight))
-  .hexAltitude((d) => Math.min(0.3, 0.01 + d.sumWeight * 0.004))
-  .hexLabel((d) => `<b>${d.points.length}</b> tournament${d.points.length > 1 ? 's' : ''}`)
-  .onHexClick(showArea);
+  .atmosphereColor('#7fb2ff')
+  .htmlLat('lat')
+  .htmlLng('lng')
+  .htmlAltitude(0.004)
+  .htmlTransitionDuration(0)
+  .htmlElement(bubble);
 
-// yellow (few) -> red (many)
-function heat(n) {
-  const t = Math.min(1, Math.log10(n + 1) / 2);
-  return `hsl(${48 - 48 * t}, 95%, ${62 - 10 * t}%)`;
-}
-
+world.renderer().setPixelRatio(Math.min(devicePixelRatio, 1.5)); // big win on hi-dpi screens
 world.controls().autoRotate = true;
 world.controls().autoRotateSpeed = 0.35;
 world.controls().addEventListener('start', () => (world.controls().autoRotate = false));
 world.onZoom(({ altitude }) => {
-  const r = resFor(altitude);
-  if (r !== res) { res = r; world.hexBinResolution(r); }
+  const t = tierOf(altitude);
+  if (t !== tier) { tier = t; render(); }
 });
 addEventListener('resize', () => world.width(innerWidth).height(innerHeight));
+
+// Greedy proximity clustering: each tournament joins the nearest cluster within `r` degrees.
+function cluster(items, r) {
+  const cs = [];
+  for (const t of items) {
+    let hit = null, best = r;
+    for (const c of cs) {
+      let dl = Math.abs(c.lng - t.lng);
+      if (dl > 180) dl = 360 - dl;
+      const dist = Math.hypot(dl * Math.cos((t.lat * Math.PI) / 180), c.lat - t.lat);
+      if (dist < best) { best = dist; hit = c; }
+    }
+    if (!hit) { cs.push({ lat: t.lat, lng: t.lng, items: [t] }); continue; }
+    hit.items.push(t);
+    const n = hit.items.length;
+    let lng = t.lng;
+    if (lng - hit.lng > 180) lng -= 360; else if (hit.lng - lng > 180) lng += 360; // antimeridian
+    hit.lat += (t.lat - hit.lat) / n;
+    hit.lng += (lng - hit.lng) / n;
+    if (hit.lng > 180) hit.lng -= 360; else if (hit.lng < -180) hit.lng += 360;
+  }
+  return cs;
+}
+
+const heat = (n) => { const t = Math.min(1, Math.log10(n) / 1.6); return `hsl(${46 - 46 * t}, 95%, ${60 - 8 * t}%)`; };
+
+function bubble(d) {
+  const n = d.items.length;
+  const size = 26 + Math.min(34, Math.log2(n) * 7);
+  const el = document.createElement('button');
+  el.className = 'bubble';
+  el.textContent = n;
+  el.title = `${n} tournament${n > 1 ? 's' : ''}`;
+  el.style.cssText = `width:${size}px;height:${size}px;background:${heat(n)};color:${n < 10 ? '#1a1206' : '#fff'};font-size:${size > 40 ? 15 : 13}px`;
+  el.onclick = (e) => { e.stopPropagation(); showArea(d.items); };
+  return el;
+}
+
+function visible() {
+  const cutoff = state.months ? Date.now() / 1000 - state.months * 30.44 * 86400 : 0;
+  return all.filter((t) => t.p >= state.minPlayers && t.d >= cutoff);
+}
+
+function render() {
+  const items = visible();
+  world.htmlElementsData(cluster(items, RADII[Math.max(tier, 0)]));
+  $('stats').textContent = `${items.length.toLocaleString()} tournaments shown. Drag to rotate, scroll to zoom, click a bubble.`;
+}
 
 fetch('data/tournaments.json')
   .then((r) => r.json())
   .then(({ tournaments }) => {
-    world.hexBinPointsData(tournaments);
-    const years = tournaments.length ? `${new Date(tournaments.at(-1).d * 1000).getFullYear()}–${new Date(tournaments[0].d * 1000).getFullYear()}` : '';
-    $('stats').textContent = `${tournaments.length.toLocaleString()} tournaments ${years}. Drag to rotate, scroll to zoom, click a column.`;
+    all = tournaments;
+    tier = tierOf(world.pointOfView().altitude);
+    render();
   })
   .catch(() => ($('stats').textContent = 'Could not load tournament data. Run the fetch script first.'));
 
-function showArea(hex) {
-  const list = [...hex.points].sort((a, b) => b.d - a.d);
+$('filters').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const g = b.parentElement;
+  g.querySelectorAll('button').forEach((x) => { x.classList.remove('on'); x.setAttribute('aria-pressed', 'false'); });
+  b.classList.add('on');
+  b.setAttribute('aria-pressed', 'true');
+  state[g.dataset.key] = +b.dataset.v;
+  $('area').hidden = true;
+  render();
+});
+
+function showArea(items) {
+  const list = [...items].sort((a, b) => b.d - a.d);
   const cities = [...new Set(list.map((t) => t.c).filter(Boolean))];
   $('area-title').textContent = `${list.length} tournament${list.length > 1 ? 's' : ''}` + (cities.length ? ` near ${cities.slice(0, 2).join(' / ')}` : '');
   $('area-list').innerHTML = list.map((t, i) =>
@@ -87,4 +141,4 @@ document.addEventListener('click', (e) => {
   if (c) $(c.dataset.close).hidden = true;
   else if (e.target === $('modal')) $('modal').hidden = true;
 });
-addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('modal').hidden = true; } });
+addEventListener('keydown', (e) => { if (e.key === 'Escape') $('modal').hidden = true; });

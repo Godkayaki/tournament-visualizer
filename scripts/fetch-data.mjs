@@ -3,8 +3,11 @@
 //
 //   TOPDECK_API_KEY=xxxx node scripts/fetch-data.mjs
 //   Optional: START_DATE=2023-01-01  FORMAT=EDH
+//   Incremental: if site/data/tournaments.json already exists (restored from the Actions cache),
+//   only the last 30 days are refetched and merged. FULL=1 forces a complete rebuild.
+//   SKIP_IF_CACHED=1 exits immediately when cached data exists (used on code-only pushes).
 
-import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const KEY = process.env.TOPDECK_API_KEY;
@@ -74,8 +77,20 @@ function commanders(p) {
     .filter(Boolean);
 }
 
+let previous = [];
+let from = START;
+if (!process.env.FULL) {
+  try {
+    const prev = JSON.parse(await readFile(OUT + 'tournaments.json', 'utf8'));
+    if (process.env.SKIP_IF_CACHED) { console.log('Cached data found, skipping fetch'); process.exit(0); }
+    previous = prev.tournaments;
+    from = Math.max(START, prev.generated - 30 * 86400); // overlap: late standings/edits
+    console.log(`Incremental: ${previous.length} cached, fetching since ${new Date(from * 1000).toISOString().slice(0, 10)}`);
+  } catch { /* no cache: full fetch */ }
+}
+
 const seen = new Map();
-for (let s = START; s < NOW; s += STEP) {
+for (let s = from; s < NOW; s += STEP) {
   const e = Math.min(s + STEP - 1, NOW);
   const batch = await fetchRange(s, e);
   for (const t of batch) seen.set(t.TID, t);
@@ -83,17 +98,16 @@ for (let s = START; s < NOW; s += STEP) {
   await sleep(2000); // be gentle: bulk endpoint has a low rate limit
 }
 
-await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT + 't/', { recursive: true });
 
-const index = [];
+const byId = new Map(previous.map((t) => [t.id, t]));
 for (const t of seen.values()) {
   const { lat, lng, city, state } = t.eventData || {};
   if (typeof lat !== 'number' || typeof lng !== 'number') continue; // online / no location
   if (!t.standings?.length) continue;
 
   const f = String(t.TID).replace(/[^\w-]/g, '_');
-  index.push({
+  byId.set(t.TID, {
     id: t.TID, f, n: t.tournamentName, d: t.startDate,
     lat, lng, c: city || '', s: state || '',
     p: t.standings.length, sw: t.swissNum || 0, tc: t.topCut || 0,
@@ -104,6 +118,6 @@ for (const t of seen.values()) {
   ));
 }
 
-index.sort((a, b) => b.d - a.d);
+const index = [...byId.values()].sort((a, b) => b.d - a.d);
 await writeFile(OUT + 'tournaments.json', JSON.stringify({ generated: NOW, tournaments: index }));
 console.log(`Wrote ${index.length} located tournaments (of ${seen.size} fetched)`);

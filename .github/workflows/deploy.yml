@@ -6,6 +6,11 @@ on:
   schedule:
     - cron: "0 5 * * *"   # refresh data daily
   workflow_dispatch:
+    inputs:
+      full:
+        description: "Rebuild all data from scratch"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,10 +29,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Restore cached tournament data
+        uses: actions/cache@v4
+        with:
+          path: site/data
+          key: topdeck-data-${{ github.run_id }}
+          restore-keys: topdeck-data-
       - name: Fetch tournament data
         run: node scripts/fetch-data.mjs
         env:
           TOPDECK_API_KEY: ${{ secrets.TOPDECK_API_KEY }}
+          # code-only pushes reuse the cache; scheduled/manual runs fetch only the latest 30 days
+          SKIP_IF_CACHED: ${{ github.event_name == 'push' && '1' || '' }}
+          FULL: ${{ inputs.full && '1' || '' }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

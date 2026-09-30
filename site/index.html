@@ -14,6 +14,22 @@
     <p id="stats">Loading tournaments…</p>
   </header>
 
+  <nav id="filters" aria-label="Filters">
+    <div class="group" data-key="minPlayers">
+      <span>Players</span>
+      <button data-v="30" aria-pressed="false">30+</button>
+      <button data-v="50" class="on" aria-pressed="true">50+</button>
+      <button data-v="100" aria-pressed="false">100+</button>
+    </div>
+    <div class="group" data-key="months">
+      <span>Period</span>
+      <button data-v="3" class="on" aria-pressed="true">3 months</button>
+      <button data-v="6" aria-pressed="false">6 months</button>
+      <button data-v="12" aria-pressed="false">1 year</button>
+      <button data-v="0" aria-pressed="false">All time</button>
+    </div>
+  </nav>
+
   <aside id="area" hidden>
     <button class="close" data-close="area" aria-label="Close">×</button>
     <h2 id="area-title"></h2>
