@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cEDH Tournament Globe</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="globe"></div>
+
+  <header id="title">
+    <h1>cEDH Tournament Globe</h1>
+    <p id="stats">Loading tournaments…</p>
+  </header>
+
+  <aside id="area" hidden>
+    <button class="close" data-close="area" aria-label="Close">×</button>
+    <h2 id="area-title"></h2>
+    <ul id="area-list"></ul>
+  </aside>
+
+  <div id="modal" hidden>
+    <div class="card" role="dialog" aria-modal="true" aria-labelledby="m-title">
+      <button class="close" data-close="modal" aria-label="Close">×</button>
+      <h2 id="m-title"></h2>
+      <p id="m-meta"></p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>#</th><th>Player</th><th>Commander</th><th>Record</th></tr></thead>
+          <tbody id="m-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>Data provided by <a href="https://topdeck.gg" target="_blank" rel="noopener">TopDeck.gg</a></footer>
+
+  <script src="https://unpkg.com/globe.gl@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
