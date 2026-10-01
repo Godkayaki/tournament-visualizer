@@ -177,7 +177,8 @@ function render() {
 // A name matching KEEP is always shown. Otherwise a name matching any BLOCK pattern is hidden.
 // Edit these lists freely: it's a browser-side filter, so just refresh the page.
 const KEEP = [/\bc\s?edh/i, /bracket\s*5\b/i];
-const BLOCK = [/bracket\s*[1-4]\b/i, 
+const BLOCK = [/bracket\s*[1-4]\b/i,
+  /b\s*[1-4]\b/i, 
   /budget/i, 
   /casual/i, 
   /precon/i, 
