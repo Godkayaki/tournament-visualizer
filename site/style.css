@@ -1,9 +1,9 @@
 :root {
-  --bg: #070b16;
-  --panel: #0f1626;
-  --line: #24304a;
+  --bg: #0d1117;
+  --panel: #0d1117;
+  --line: #30363d;
   --text: #e8ecf5;
-  --dim: #8b97b3;
+  --dim: #8b949e;
   --accent: #19f5d8;
   color-scheme: dark;
 }
@@ -11,6 +11,12 @@
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
 #globe { position: fixed; inset: 0; }
+
+/* Starfield: two tiled layers drawn at the screen's pixel ratio (see app.js), so stars stay sharp */
+#stars { position: fixed; inset: 0; overflow: hidden; pointer-events: none;
+  background: #000; }
+#stars .layer { position: absolute; left: 0; top: 0; width: calc(100% + 1024px); height: calc(100% + 1024px);
+  background-size: 1024px 1024px; will-change: transform; }
 a { color: var(--accent); }
 
 #title { position: fixed; top: 16px; left: 20px; pointer-events: none; }
@@ -25,28 +31,28 @@ a { color: var(--accent); }
 #area ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; }
 #area li button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer;
   padding: 10px 18px; border-top: 1px solid var(--line); }
-#area li button:hover, #area li button:focus-visible { background: #172038; }
+#area li button:hover, #area li button:focus-visible { background: #161b22; }
 #area .sub { color: var(--dim); font-size: 13px; }
 #area .loc { color: var(--accent); }
 
 .close { position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0;
   border-radius: 6px; background: transparent; color: var(--dim); font-size: 22px; cursor: pointer; }
-.close:hover { color: var(--text); background: #172038; }
+.close:hover { color: var(--text); background: #161b22; }
 
 #modal { position: fixed; inset: 0; z-index: 20; /* above the filter bar, so the dimming covers it too */
   background: rgba(4, 7, 14, .72); display: grid; place-items: center;
   padding: 80px 16px 16px; /* top padding keeps the popup clear of the filter bar */ }
 .card { position: relative; width: min(760px, 100%); max-height: calc(100vh - 96px); display: flex; flex-direction: column;
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.card .close { z-index: 2; color: var(--text); background: rgba(10, 16, 30, .55); }
+.card .close { z-index: 2; color: var(--text); background: rgba(13, 17, 23, .55); }
 
 .banner { flex: none; min-height: 130px; padding: 22px 56px 14px 20px; display: flex; flex-direction: column; justify-content: flex-end;
-  background-image: linear-gradient(180deg, rgba(15, 22, 38, .25), var(--panel)), var(--bg, none);
+  background-image: linear-gradient(180deg, rgba(13, 17, 23, .25), var(--panel)), var(--banner-art, none);
   background-size: cover; background-position: center 22%; }
 .banner h2 { margin: 0 0 2px; font-size: 22px; text-shadow: 0 1px 8px rgba(0, 0, 0, .8); }
 #m-meta { margin: 0 0 10px; color: #c9d3e8; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
 #m-bracket { align-self: flex-start; font-size: 13px; text-decoration: none; padding: 3px 12px;
-  border: 1px solid var(--accent); border-radius: 999px; background: rgba(10, 16, 30, .6); }
+  border: 1px solid var(--accent); border-radius: 999px; background: rgba(13, 17, 23, .6); }
 #m-bracket:hover { background: var(--accent); color: #04201c; }
 
 .scroll { overflow: auto; padding: 10px 14px 14px; }
@@ -55,10 +61,10 @@ a { color: var(--accent); }
 
 .entry { position: relative; isolation: isolate; display: flex; align-items: center; gap: 14px; min-height: 64px;
   padding: 10px 16px 10px 8px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
-  background: #101828; color: var(--text); text-decoration: none; }
+  background: #161b22; color: var(--text); text-decoration: none; }
 .entry:hover { border-color: var(--accent); }
 .entry::before { content: ""; position: absolute; inset: 0; z-index: -1;
-  background: linear-gradient(90deg, rgba(10, 16, 30, .95) 0%, rgba(10, 16, 30, .75) 45%, rgba(10, 16, 30, .2) 100%); }
+  background: linear-gradient(90deg, rgba(13, 17, 23, .95) 0%, rgba(13, 17, 23, .75) 45%, rgba(13, 17, 23, .2) 100%); }
 .art { position: absolute; inset: 0; z-index: -2; display: flex; }
 .art img { flex: 1; min-width: 0; height: 100%; object-fit: cover; object-position: center 22%; }
 .rank { flex: none; width: 46px; text-align: center; font-size: 14px; font-weight: 700; color: var(--dim); }
@@ -75,14 +81,16 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
 
 /* Floating filter bar (solid background: backdrop blur over WebGL is expensive) */
 #filters { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 18px;
-  padding: 6px 10px; background: rgba(15, 22, 38, .92); border: 1px solid var(--accent); border-radius: 999px;
+  padding: 6px 10px; background: rgba(13, 17, 23, .92); border: 1px solid var(--accent); border-radius: 999px;
   white-space: nowrap; z-index: 5; }
 #filters .group { display: flex; align-items: center; gap: 2px; }
 #filters .group + .group { padding-left: 18px; border-left: 1px solid var(--line); }
 #filters span { color: var(--dim); font-size: 13px; margin-right: 8px; }
+/* the last button has 11px of inner padding on the right: mirror it before the first label so both sides match */
+#filters .group:first-child > span { padding-left: 11px; }
 #filters button { border: 0; background: transparent; color: var(--text); font: inherit; font-size: 13px;
   padding: 5px 11px; border-radius: 999px; cursor: pointer; }
-#filters button:hover { background: #172038; }
+#filters button:hover { background: #161b22; }
 #filters button.on { background: var(--accent); color: #04201c; font-weight: 600; }
 
 /* Cluster bubbles: outer = positioned by globe.gl, .dot = visual circle that grows on hover */
