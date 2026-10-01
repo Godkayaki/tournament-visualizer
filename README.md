@@ -33,14 +33,16 @@ const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find(
 
 ```bash
 git clone https://github.com/Godkayaki/tournament-visualizer
-TOPDECK_API_KEY=your_key
-node scripts/fetch-data.mjs # Node 18+
+TOPDECK_API_KEY=your_key      # In windows; $env:TOPDECK_API_KEY=your_key
+node scripts/fetch-data.mjs   # Node 18+
 npx serve site
 ```
 - You can get your `TOPDECK_API_KEY` at [Topdeck Dev](https://topdeck.gg/developers).
 - Optional env vars: 
   - `START_DATE` (default `2023-01-01`)
   - `FORMAT` (default `EDH`).
+
+Usually accessible through `http://localhost:3000`
 
 ## To-do list
 
