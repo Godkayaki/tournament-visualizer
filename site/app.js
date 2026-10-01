@@ -6,7 +6,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const fmtDate = (ts) => new Date(ts * 1000).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const place = (t) => [t.c, t.s].filter(Boolean).join(', ') || 'Unknown location';
 
-const state = { minPlayers: 50, months: 6 }; // defaults; must match the .on buttons in index.html
+const state = { minPlayers: 30, months: 6 }; // defaults; must match the .on buttons in index.html
 let all = [];
 let tier = -1;
 
