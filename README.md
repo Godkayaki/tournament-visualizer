@@ -42,4 +42,10 @@ npx serve site
   - **Shuffleup** -> Still in beta, no api documentation visible, looks complicated.
   - **God of commander** -> Japanese cEDH tournament from Hareruya, really difficult to actually get the information.
 - Set initial view to the middle of the Atlantic, between Spain and the US
+- Add small color next to tournament indicating the tiers of each tournament. This will be based of the topdeck ivnitational, but it's not just for the tournaments within the invitational, it will also mark tournaments outside;
+  - Bronze -> +16 players
+  - Silver -> +30 players
+  - Gold -> +50 players
+  - Platinum -> +100 players
+  - Diamond -> +250 players
 - Add Privacy policy
