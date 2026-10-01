@@ -185,6 +185,7 @@ const BLOCK = [/bracket\s*[1-4]\b/i,
   /pauper/i, 
   /commander\sparty/i,
   /infrefest/i,
+  /gg\scommander\sclash/i,
 ];
 const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find((r) => r.test(name)) || null);
 
