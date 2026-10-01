@@ -183,9 +183,12 @@ const BLOCK = [/bracket\s*[1-4]\b/i,
   /casual/i, 
   /precon/i, 
   /pauper/i, 
-  /commander\sparty/i,
-  /infrefest/i,
-  /gg\scommander\sclash/i,
+  /commander\sparty/i, 
+  /infrefest/i, 
+  /gg\scommander\sclash/i, 
+  /commander\s500/i, 
+  /c500/i, 
+  /pre-con/i, 
 ];
 const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find((r) => r.test(name)) || null);
 
