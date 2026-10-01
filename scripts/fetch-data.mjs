@@ -5,9 +5,10 @@
 //   Optional: START_DATE=2023-01-01  FORMAT=EDH
 //   Incremental: if site/data/tournaments.json already exists (restored from the Actions cache),
 //   only the last 30 days are refetched and merged. FULL=1 forces a complete rebuild.
-//   SKIP_IF_CACHED=1 exits immediately when cached data exists (used on code-only pushes).
+//   SKIP_IF_CACHED=1 skips the TopDeck fetch when cached data exists (used on code-only pushes).
+//   Commander art (Scryfall art_crop URLs) is resolved here too and stored in site/data/art.json.
 
-import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const KEY = process.env.TOPDECK_API_KEY;
@@ -79,45 +80,99 @@ function commanders(p) {
 
 let previous = [];
 let from = START;
+let skipFetch = false;
 if (!process.env.FULL) {
   try {
     const prev = JSON.parse(await readFile(OUT + 'tournaments.json', 'utf8'));
-    if (process.env.SKIP_IF_CACHED) { console.log('Cached data found, skipping fetch'); process.exit(0); }
     previous = prev.tournaments;
-    from = Math.max(START, prev.generated - 30 * 86400); // overlap: late standings/edits
-    console.log(`Incremental: ${previous.length} cached, fetching since ${new Date(from * 1000).toISOString().slice(0, 10)}`);
+    if (process.env.SKIP_IF_CACHED) {
+      skipFetch = true;
+      console.log('Cached data found, skipping tournament fetch');
+    } else {
+      from = Math.max(START, prev.generated - 30 * 86400); // overlap: late standings/edits
+      console.log(`Incremental: ${previous.length} cached, fetching since ${new Date(from * 1000).toISOString().slice(0, 10)}`);
+    }
   } catch { /* no cache: full fetch */ }
-}
-
-const seen = new Map();
-for (let s = from; s < NOW; s += STEP) {
-  const e = Math.min(s + STEP - 1, NOW);
-  const batch = await fetchRange(s, e);
-  for (const t of batch) seen.set(t.TID, t);
-  console.log(`${new Date(s * 1000).toISOString().slice(0, 10)}: ${batch.length} tournaments`);
-  await sleep(2000); // be gentle: bulk endpoint has a low rate limit
 }
 
 await mkdir(OUT + 't/', { recursive: true });
 
-const byId = new Map(previous.map((t) => [t.id, t]));
-for (const t of seen.values()) {
-  const { lat, lng, city, state } = t.eventData || {};
-  if (typeof lat !== 'number' || typeof lng !== 'number') continue; // online / no location
-  if (!t.standings?.length) continue;
+if (!skipFetch) {
+  const seen = new Map();
+  for (let s = from; s < NOW; s += STEP) {
+    const e = Math.min(s + STEP - 1, NOW);
+    const batch = await fetchRange(s, e);
+    for (const t of batch) seen.set(t.TID, t);
+    console.log(`${new Date(s * 1000).toISOString().slice(0, 10)}: ${batch.length} tournaments`);
+    await sleep(2000); // be gentle: bulk endpoint has a low rate limit
+  }
 
-  const f = String(t.TID).replace(/[^\w-]/g, '_');
-  byId.set(t.TID, {
-    id: t.TID, f, n: t.tournamentName, d: t.startDate,
-    lat, lng, c: city || '', s: state || '',
-    p: t.standings.length, sw: t.swissNum || 0, tc: t.topCut || 0,
-  });
-  // Standings are kept in the order the API returns them (assumed to be final placement).
-  await writeFile(`${OUT}t/${f}.json`, JSON.stringify(
-    t.standings.map((p) => ({ n: p.name, i: p.id, c: commanders(p), w: p.wins || 0, d: p.draws || 0, l: p.losses || 0 }))
-  ));
+  const byId = new Map(previous.map((t) => [t.id, t]));
+  for (const t of seen.values()) {
+    const { lat, lng, city, state } = t.eventData || {};
+    if (typeof lat !== 'number' || typeof lng !== 'number') continue; // online / no location
+    if (!t.standings?.length) continue;
+
+    const f = String(t.TID).replace(/[^\w-]/g, '_');
+    byId.set(t.TID, {
+      id: t.TID, f, n: t.tournamentName, d: t.startDate,
+      lat, lng, c: city || '', s: state || '',
+      p: t.standings.length, sw: t.swissNum || 0, tc: t.topCut || 0,
+    });
+    // Standings are kept in the order the API returns them (assumed to be final placement).
+    await writeFile(`${OUT}t/${f}.json`, JSON.stringify(
+      t.standings.map((p) => ({ n: p.name, i: p.id, c: commanders(p), w: p.wins || 0, d: p.draws || 0, l: p.losses || 0 }))
+    ));
+  }
+
+  const index = [...byId.values()].sort((a, b) => b.d - a.d);
+  await writeFile(OUT + 'tournaments.json', JSON.stringify({ generated: NOW, tournaments: index }));
+  console.log(`Wrote ${index.length} located tournaments (of ${seen.size} fetched)`);
 }
 
-const index = [...byId.values()].sort((a, b) => b.d - a.d);
-await writeFile(OUT + 'tournaments.json', JSON.stringify({ generated: NOW, tournaments: index }));
-console.log(`Wrote ${index.length} located tournaments (of ${seen.size} fetched)`);
+// ---- Commander art: name -> [front-face art_crop URL], resolved via Scryfall ----
+const SCRYFALL = {
+  'User-Agent': 'cedh-globe/1.0 (https://github.com/Godkayaki/tournament-visualizer)',
+  Accept: 'application/json',
+  'Content-Type': 'application/json',
+};
+const frontFace = (n) => n.split(' // ')[0].toLowerCase();
+
+async function buildArt() {
+  let art = {};
+  try { art = JSON.parse(await readFile(OUT + 'art.json', 'utf8')); } catch { /* first run */ }
+
+  const names = new Set();
+  for (const f of await readdir(OUT + 't/')) {
+    for (const row of JSON.parse(await readFile(OUT + 't/' + f, 'utf8'))) row.c.forEach((c) => names.add(c));
+  }
+  // also retry empty entries of "A // B" names: an earlier version failed to resolve them
+  const missing = [...names].filter((n) => !(n in art) || (!art[n].length && n.includes(' // ')));
+  console.log(`Commander art: ${names.size} commanders, ${missing.length} to look up`);
+
+  for (let i = 0; i < missing.length; i += 75) {
+    const chunk = missing.slice(i, i + 75);
+    try {
+      const res = await fetch('https://api.scryfall.com/cards/collection', {
+        method: 'POST',
+        headers: SCRYFALL,
+        body: JSON.stringify({ identifiers: chunk.map((name) => ({ name: name.split(' // ')[0].trim() })) }), // "A // B" -> look up "A"
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { data } = await res.json();
+      const lookup = new Map();
+      for (const c of data) { lookup.set(c.name.toLowerCase(), c); lookup.set(frontFace(c.name), c); }
+      for (const n of chunk) {
+        const c = lookup.get(n.toLowerCase()) || lookup.get(frontFace(n));
+        const face = c && (c.image_uris || c.card_faces?.[0]?.image_uris); // front face only
+        art[n] = face?.art_crop ? [face.art_crop] : []; // [] = not found
+      }
+    } catch (err) {
+      console.warn(`  scryfall chunk failed (${err.cause?.code || err.message}); will retry next run`);
+    }
+    await sleep(600); // Scryfall asks for <= 2 req/s on this endpoint
+  }
+  await writeFile(OUT + 'art.json', JSON.stringify(art));
+}
+await buildArt();

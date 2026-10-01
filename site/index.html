@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>cEDH Tournament Globe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,15 +20,17 @@
   <nav id="filters" aria-label="Filters">
     <div class="group" data-key="minPlayers">
       <span>Players</span>
+      <button data-v="0" aria-pressed="false">All</button>
       <button data-v="30" aria-pressed="false">30+</button>
       <button data-v="50" class="on" aria-pressed="true">50+</button>
       <button data-v="100" aria-pressed="false">100+</button>
     </div>
     <div class="group" data-key="months">
       <span>Period</span>
-      <button data-v="3" class="on" aria-pressed="true">3 months</button>
-      <button data-v="6" aria-pressed="false">6 months</button>
+      <button data-v="3" aria-pressed="false">3 months</button>
+      <button data-v="6" class="on" aria-pressed="true">6 months</button>
       <button data-v="12" aria-pressed="false">1 year</button>
+      <button data-v="24" aria-pressed="false">2 years</button>
       <button data-v="0" aria-pressed="false">All time</button>
     </div>
   </nav>
@@ -39,18 +44,25 @@
   <div id="modal" hidden>
     <div class="card" role="dialog" aria-modal="true" aria-labelledby="m-title">
       <button class="close" data-close="modal" aria-label="Close">×</button>
-      <h2 id="m-title"></h2>
-      <p id="m-meta"></p>
-      <div class="scroll">
-        <table>
-          <thead><tr><th>#</th><th>Player</th><th>Commander</th><th>Record</th></tr></thead>
-          <tbody id="m-body"></tbody>
-        </table>
-      </div>
+      <header class="banner" id="m-banner">
+        <h2 id="m-title"></h2>
+        <p id="m-meta"></p>
+        <a id="m-bracket" href="#" target="_blank" rel="noopener">View bracket</a>
+      </header>
+      <div class="scroll" id="m-scroll"><ol id="m-list"></ol></div>
     </div>
   </div>
 
-  <footer>Data provided by <a href="https://topdeck.gg" target="_blank" rel="noopener">TopDeck.gg</a></footer>
+  <footer>
+    <div>Data provided by <a href="https://topdeck.gg" target="_blank" rel="noopener">TopDeck.gg</a></div>
+    <div>
+      <a href="https://github.com/Godkayaki/tournament-visualizer" target="_blank" rel="noopener">Source code</a>
+      · Contact:
+      <a href="https://moxfield.com/users/DrG" target="_blank" rel="noopener">Moxfield</a> ·
+      <a href="https://discord.com/users/212661657980108802" target="_blank" rel="noopener">Discord</a>
+      · <a href="https://ko-fi.com/kayaki" target="_blank" rel="noopener">Support me on Ko-Fi!</a>
+    </div>
+  </footer>
 
   <script src="https://unpkg.com/globe.gl@2"></script>
   <script src="app.js"></script>
