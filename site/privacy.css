@@ -1,0 +1,30 @@
+/* Privacy page: a normal scrolling document that reuses style.css (colors, title block, footer) */
+html.doc, html.doc body { height: auto; min-height: 100%; overflow: auto; }
+html.doc body { background: #000; padding-bottom: 8px; }
+
+/* The title block is fixed over the globe on the main page; here it is a regular header and a link home */
+html.doc #title { position: static; pointer-events: auto; --logo: 52px; padding: 16px 20px 0; }
+html.doc #title p { display: block; } /* keep the tagline at every width (the globe page hides it on mid screens) */
+.brand { display: flex; align-items: center; gap: 12px; width: fit-content; color: var(--text); text-decoration: none; }
+.brand:hover h1 { color: var(--accent); }
+
+.policy { width: min(760px, calc(100% - 32px)); margin: 28px auto 0; padding: 28px 32px 32px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; line-height: 1.65; }
+.policy h2 { margin: 0; font-size: 30px; line-height: 1.2; }
+.policy .updated { margin: 6px 0 20px; color: var(--dim); font-size: 14px; }
+.policy h3 { margin: 32px 0 8px; font-size: 19px; }
+.policy p, .policy li { color: #c9d3e8; }
+.policy p { margin: 0 0 12px; }
+.policy ul { margin: 0 0 12px; padding-left: 22px; }
+.policy li { margin-bottom: 10px; }
+.policy li strong, .policy strong { color: var(--text); }
+.policy code { font-size: 13px; padding: 1px 6px; border-radius: 4px; background: #161b22; border: 1px solid var(--line); }
+.summary { border-left: 3px solid var(--accent); padding: 2px 0 2px 16px; margin: 0 0 8px; }
+.summary p { margin: 0; }
+
+html.doc footer { position: static; width: min(760px, calc(100% - 32px)); margin: 24px auto 20px; }
+
+@media (max-width: 600px) {
+  .policy { padding: 22px 18px 26px; }
+  .policy h2 { font-size: 26px; }
+}

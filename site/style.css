@@ -19,13 +19,16 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
   background-size: 1024px 1024px; will-change: transform; }
 a { color: var(--accent); }
 
-#title { position: fixed; top: 16px; left: 20px; pointer-events: none; }
-#title h1 { margin: 0; font-size: 22px; letter-spacing: .01em; }
+/* Logo + title + hint. Line heights are explicit (30 + 2 + 20 = 52px) so the logo is exactly as tall as the text block */
+#title { --logo: 52px; position: fixed; top: 16px; left: 20px; pointer-events: none; display: flex; align-items: center; gap: 12px; }
+#title img { height: var(--logo); width: auto; display: block;
+  filter: drop-shadow(0 0 5px rgba(25, 245, 216, .35)) drop-shadow(0 0 14px rgba(25, 245, 216, .25)); } /* soft neon glow, milder than the globe's */
+#title h1 { margin: 0; font-size: 22px; line-height: 30px; letter-spacing: .01em; }
+#title p { margin: 2px 0 0; font-size: 15px; line-height: 20px; color: var(--dim); }
 /* Tournament counter: centered under the filter bar */
 #stats { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); margin: 0; text-align: center;
   white-space: nowrap; pointer-events: none; color: var(--dim); font-size: 17px; font-weight: 700;
   text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
-#stats small { display: block; margin-top: 1px; font-size: 13px; font-weight: 400; }
 
 #area { position: fixed; top: 16px; right: 16px; max-height: calc(100vh - 32px); width: min(380px, calc(100vw - 32px));
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 0 8px;
@@ -38,6 +41,33 @@ a { color: var(--accent); }
 #area li button:hover, #area li button:focus-visible { background: #161b22; }
 #area .sub { color: var(--dim); font-size: 13px; }
 #area .loc { color: var(--accent); }
+
+/* open/close animations (delete this block to remove them; the closing delay in app.js is then harmless) */
+/* Tournament list: slides in from the right */
+#area:not([hidden]) { transform-origin: top right; animation: area-in .22s cubic-bezier(.2, .8, .2, 1); }
+#area.closing { animation: area-out .18s ease-in forwards; pointer-events: none; } /* must stay after the rule above */
+@keyframes area-in { from { opacity: 0; transform: translateX(24px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes area-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(24px) scale(.98); } }
+/* Tournament popup: the dimmed backdrop fades while the card rises and scales in */
+#modal:not([hidden]) { animation: fade-in .2s ease-out; }
+#modal:not([hidden]) .card { animation: card-in .26s cubic-bezier(.2, .8, .2, 1); }
+#modal.closing { animation: fade-out .18s ease-in forwards; pointer-events: none; } /* must stay after the rules above */
+#modal.closing .card { animation: card-out .18s ease-in forwards; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes card-in { from { transform: translateY(14px) scale(.97); } to { transform: none; } }
+@keyframes card-out { from { transform: none; } to { transform: translateY(10px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) {
+  #area:not([hidden]), #area.closing, #modal:not([hidden]), #modal.closing,
+  #modal:not([hidden]) .card, #modal.closing .card { animation: none; }
+}
+
+/* "Ordered by" dropdown in the tournament list */
+#order { display: flex; align-items: center; gap: 8px; padding: 0 18px 12px; font-size: 13px; color: var(--dim); }
+#order[hidden] { display: none; }
+#order select { font: inherit; color: var(--text); background: #161b22; border: 1px solid var(--line);
+  border-radius: 8px; padding: 4px 8px; cursor: pointer; }
+#order select:hover { border-color: var(--accent); }
 
 .close { position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0;
   border-radius: 6px; background: transparent; color: var(--dim); font-size: 22px; cursor: pointer; }
@@ -112,7 +142,16 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
   #area { top: 72px; max-height: calc(100vh - 88px); }
 }
 
+/* Mid-size screens: the filter bar would run into the hint line, so show a compact title (logo + name only) */
+@media (max-width: 1500px) {
+  #title { --logo: 30px; }
+  #title p { display: none; }
+}
+
 @media (max-width: 900px) {
+  /* the bar drops below the title here, so the full title fits again */
+  #title { --logo: 52px; top: 8px; }
+  #title p { display: block; }
   #filters { top: 64px; gap: 10px; max-width: calc(100vw - 16px); overflow-x: auto; }
   #filters .group + .group { padding-left: 10px; }
   #filters span { display: none; }

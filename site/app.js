@@ -8,6 +8,7 @@ const place = (t) => [t.c, t.s].filter(Boolean).join(', ') || 'Unknown location'
 
 const state = { minPlayers: 30, months: 6 }; // defaults; must match the .on buttons in index.html
 let all = [];
+let countries = []; // country polygons (GeoJSON features): drawn as borders and used to name areas
 let tier = -1;
 
 // Cluster radius in degrees for each zoom tier (camera altitude in globe radii).
@@ -47,7 +48,8 @@ mat.specular.set('#000000');
     try {
       const r = await fetch(url);
       if (!r.ok) continue;
-      world.polygonsData((await r.json()).features);
+      countries = (await r.json()).features;
+      world.polygonsData(countries);
       return;
     } catch { /* try next */ }
   }
@@ -176,7 +178,7 @@ function visible() {
 function render() {
   const items = visible();
   world.htmlElementsData(cluster(items, RADII[Math.max(tier, 0)]));
-  $('stats').innerHTML = `<b>${items.length.toLocaleString()} tournaments shown</b><small>Drag to rotate, scroll to zoom, click a bubble.</small>`;
+  $('stats').textContent = `${items.length.toLocaleString()} tournaments shown`;
 }
 
 // ---- cEDH-only filter, by tournament name (TopDeck's API has no bracket field) ----
@@ -223,22 +225,113 @@ $('filters').addEventListener('click', (e) => {
   b.classList.add('on');
   b.setAttribute('aria-pressed', 'true');
   state[g.dataset.key] = +b.dataset.v;
-  $('area').hidden = true;
+  closeArea();
   render();
 });
 
+// ---- Naming an area from its tournaments ----
+// Which country a point is in: point-in-polygon on the border data we already load (offline, consistent names)
+const inRing = (x, y, ring) => {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+};
+const inPoly = (x, y, rings) => inRing(x, y, rings[0]) && !rings.slice(1).some((hole) => inRing(x, y, hole));
+const polysOf = (g) => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates);
+const bboxOf = (g) => {
+  const b = [180, 90, -180, -90];
+  for (const p of polysOf(g)) for (const [x, y] of p[0]) { b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  return b;
+};
+const countryCache = new Map();
+function countryAt(lat, lng) {
+  if (!countries.length) return null;
+  const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+  if (countryCache.has(key)) return countryCache.get(key);
+  let name = null;
+  for (const f of countries) {
+    const bb = f.__bb || (f.__bb = bboxOf(f.geometry));
+    if (lng < bb[0] || lng > bb[2] || lat < bb[1] || lat > bb[3]) continue;
+    if (polysOf(f.geometry).some((p) => inPoly(lng, lat, p))) { name = f.properties.NAME || f.properties.ADMIN || f.properties.name || null; break; }
+  }
+  countryCache.set(key, name);
+  return name;
+}
+
+const tally = (values) => {
+  const m = new Map();
+  for (const v of values) if (v) { const k = v.trim().toLowerCase(); const e = m.get(k) || { label: v.trim(), n: 0 }; e.n++; m.set(k, e); }
+  return [...m.values()].sort((a, b) => b.n - a.n);
+};
+
+// One city -> "Barcelona, Spain"; a tight group -> "Barcelona area, Spain"; one country -> "Catalonia, Spain" if one
+// region dominates, else "Spain"; several countries -> "Spain, France & 3 more".
+function areaName(list) {
+  const cities = tally(list.map((t) => t.c));
+  const regions = tally(list.map((t) => t.s));
+  const nations = tally(list.map((t) => countryAt(t.lat, t.lng)));
+  const lats = list.map((t) => t.lat), lngs = list.map((t) => t.lng);
+  const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+  const span = Math.max(Math.max(...lats) - Math.min(...lats), (Math.max(...lngs) - Math.min(...lngs)) * Math.cos((midLat * Math.PI) / 180));
+  const country = nations[0]?.label;
+  const withCountry = (s) => (country ? `${s}, ${country}` : s);
+
+  if (nations.length > 1) {
+    const [a, b, ...rest] = nations.map((x) => x.label);
+    return rest.length === 0 ? `${a} & ${b}` : rest.length === 1 ? `${a}, ${b} & ${rest[0]}` : `${a}, ${b} & ${rest.length} more`;
+  }
+  if (cities.length === 1) return withCountry(cities[0].label);
+  if (span < 1.5 && cities.length) return withCountry(`${cities[0].label} area`);
+  if (country) return regions.length && regions[0].n / list.length >= 0.6 ? `${regions[0].label}, ${country}` : country;
+  // borders not loaded: fall back to the most common places
+  return cities.slice(0, 2).map((c) => c.label).join(' / ') || 'Unknown location';
+}
+
+// Open/close for the tournament list and the tournament popup: CSS animates them (see "open/close" in style.css);
+// closing waits for the animation to finish before the element is really hidden.
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function openPanel(el) {
+  clearTimeout(el._closeTimer);
+  el.classList.remove('closing');
+  el.hidden = false;
+}
+function closePanel(el, ms = 180) {
+  if (el.hidden || el.classList.contains('closing')) return;
+  if (reduceMotion()) { el.hidden = true; return; }
+  el.classList.add('closing');
+  el._closeTimer = setTimeout(() => { el.hidden = true; el.classList.remove('closing'); }, ms);
+}
+const openArea = () => openPanel($('area'));
+const closeArea = () => closePanel($('area'));
+const openModal = () => openPanel($('modal'));
+const closeModal = () => closePanel($('modal'));
+
+let areaItems = [];
+
 function showArea(items) {
-  const list = [...items].sort((a, b) => b.d - a.d);
-  const cities = [...new Set(list.map((t) => t.c).filter(Boolean))];
-  $('area-title').textContent = `${list.length} tournament${list.length > 1 ? 's' : ''}` + (cities.length ? ` near ${cities.slice(0, 2).join(' / ')}` : '');
+  areaItems = items;
+  $('area-title').innerHTML = `${esc(areaName(items))}<small style="display:block;margin-top:2px;font-size:13px;font-weight:400;color:var(--dim)">${items.length} tournament${items.length > 1 ? 's' : ''} found</small>`;
+  $('order-by').value = 'date'; // every new list starts from the most recent
+  $('order').hidden = items.length < 2; // nothing to sort with a single tournament
+  renderList();
+  openArea();
+}
+
+function renderList() {
+  const byPlayers = $('order-by').value === 'players';
+  const list = [...areaItems].sort(byPlayers ? (a, b) => b.p - a.p || b.d - a.d : (a, b) => b.d - a.d);
   $('area-list').innerHTML = list.map((t, i) =>
     `<li><button data-i="${i}">${esc(t.n)}<div class="sub">${fmtDate(t.d)} · <span class="loc">${esc(place(t))}</span> · ${t.p} players</div></button></li>`).join('');
   $('area-list').onclick = (e) => {
     const b = e.target.closest('button');
     if (b) openTournament(list[+b.dataset.i]);
   };
-  $('area').hidden = false;
+  $('area-list').scrollTop = 0;
 }
+$('order-by').addEventListener('change', renderList);
 
 const artReq = fetch('data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -251,7 +344,7 @@ async function openTournament(t) {
   $('m-banner').style.removeProperty('--banner-art');
   $('m-list').innerHTML = '<li class="msg">Loading…</li>';
   $('m-scroll').scrollTop = 0;
-  $('modal').hidden = false;
+  openModal();
   try {
     const [rows, art] = await Promise.all([fetch(`data/t/${t.f}.json`).then((r) => r.json()), artReq]);
     const imgs = (p) => p.c.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2); // front face only; partners: 2 arts side by side
@@ -274,7 +367,16 @@ async function openTournament(t) {
 
 document.addEventListener('click', (e) => {
   const c = e.target.closest('[data-close]');
-  if (c) $(c.dataset.close).hidden = true;
-  else if (e.target === $('modal')) $('modal').hidden = true;
+  if (c) { if (c.dataset.close === 'area') closeArea(); else closeModal(); }
+  else if (e.target === $('modal')) closeModal();
 });
-addEventListener('keydown', (e) => { if (e.key === 'Escape') $('modal').hidden = true; });
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+// Clicking empty map or starry background closes the tournament list (but not after dragging the globe, and never when a bubble is clicked)
+let pressAt = null;
+addEventListener('pointerdown', (e) => { pressAt = [e.clientX, e.clientY]; }, true);
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#globe') || e.target.closest('.bubble')) return;
+  if (pressAt && Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]) > 5) return; // it was a drag
+  closeArea();
+});

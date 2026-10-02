@@ -15,7 +15,11 @@
   <div id="globe"></div>
 
   <header id="title">
-    <h1>EDHGlobe</h1>
+    <img src="static/logo.svg" alt="">
+    <div>
+      <h1>EDHGlobe</h1>
+      <p>Drag to rotate, scroll to zoom.</p>
+    </div>
   </header>
 
   <nav id="filters" aria-label="Filters">
@@ -41,6 +45,13 @@
   <aside id="area" hidden>
     <button class="close" data-close="area" aria-label="Close">×</button>
     <h2 id="area-title"></h2>
+    <div id="order">
+      <label for="order-by">Ordered by</label>
+      <select id="order-by">
+        <option value="date">Last tournaments</option>
+        <option value="players">Nº of players</option>
+      </select>
+    </div>
     <ul id="area-list"></ul>
   </aside>
 
@@ -67,6 +78,7 @@
       <a href="https://discord.com/users/212661657980108802" target="_blank" rel="noopener">Discord</a>
       ─ Support me on <a href="https://ko-fi.com/kayaki" target="_blank" rel="noopener">Ko-Fi</a>!
     </div>
+    <div>Check our <a href="privacy.html">Privacy Policy</a></div>
   </footer>
 
   <script src="https://unpkg.com/globe.gl@2"></script>
