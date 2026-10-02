@@ -318,16 +318,27 @@ let areaItems = [];
 function showArea(items) {
   areaItems = items;
   $('area-title').innerHTML = `${esc(areaName(items))}<small style="display:block;margin-top:2px;font-size:13px;font-weight:400;color:var(--dim)">${items.length} tournament${items.length > 1 ? 's' : ''} found</small>`;
-  $('order-by').value = 'date'; // every new list starts from the most recent
+  $('order-by').value = 'date'; // every new list starts from the most recent...
+  $('order-dir').value = 'desc'; // ...first
+  syncDirLabels();
   $('order').hidden = items.length < 2; // nothing to sort with a single tournament
   renderList();
   openArea();
 }
 
+// The direction dropdown says what it means for the chosen order: dates or player counts
+const DIR_LABELS = { date: ['Newest', 'Oldest'], players: ['Most', 'Fewest'] };
+function syncDirLabels() {
+  const [desc, asc] = DIR_LABELS[$('order-by').value];
+  $('order-dir').options[0].text = desc;
+  $('order-dir').options[1].text = asc;
+}
+
 function renderList() {
   hidePeek();
   const byPlayers = $('order-by').value === 'players';
-  const list = [...areaItems].sort(byPlayers ? (a, b) => b.p - a.p || b.d - a.d : (a, b) => b.d - a.d);
+  const dir = $('order-dir').value === 'asc' ? -1 : 1; // 1 = descending (most recent / most players first)
+  const list = [...areaItems].sort(byPlayers ? (a, b) => dir * (b.p - a.p) || b.d - a.d : (a, b) => dir * (b.d - a.d)); // ties: most recent first
   shownList = list;
   $('area-list').innerHTML = list.map((t, i) =>
     `<li><button data-i="${i}">${esc(t.n)}<div class="sub">${fmtDate(t.d)} · <span class="loc">${esc(place(t))}</span> · ${t.p} players</div></button></li>`).join('');
@@ -336,14 +347,19 @@ function renderList() {
     if (b) { hidePeek(); openTournament(list[+b.dataset.i]); }
   };
   $('area-list').scrollTop = 0;
+  preloadRows(0, 10);
 }
-$('order-by').addEventListener('change', renderList);
+$('order-by').addEventListener('change', () => { $('order-dir').value = 'desc'; syncDirLabels(); renderList(); }); // a new order always starts at Newest / Most
+$('order-dir').addEventListener('change', renderList);
 
 const artReq = fetch('data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
 const MEDAL = ['🥇', '🥈', '🥉'];
 const ord = (n) => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
 
 // ---- Winner preview: hovering a tournament in the list shows its winning commander ----
+// 'row'  = the winner's art fades in as the background of the hovered tournament (no extra info)
+// 'card' = a floating card to the left of the list with art, commander and winner
+const HOVER_PREVIEW = 'row';
 // Standings load lazily on hover and are cached, so opening the leaderboard afterwards is instant too.
 const rowsCache = new Map();
 function getRows(t) {
@@ -356,18 +372,63 @@ function getRows(t) {
 let shownList = [], peekFor = null, peekTimer;
 function hidePeek() {
   clearTimeout(peekTimer);
+  peekFor?.querySelector('.row-art')?.classList.remove('on');
   peekFor = null;
   $('peek').classList.remove('on');
+}
+
+const picsOf = (names, art) => names.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2);
+
+// Preload winner art for the rows the mouse is likely to reach next, so the hover shows up instantly.
+// Skipped on touch screens (no hover there) and staggered so it doesn't compete with other requests.
+let artMap = {};
+artReq.then((m) => { artMap = m; });
+const preloaded = new Set();
+function preloadArt(t) {
+  if (!t?.w) return;
+  for (const url of picsOf(t.w, artMap)) {
+    if (preloaded.has(url)) continue;
+    preloaded.add(url);
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+  }
+}
+function preloadRows(from, count) {
+  if (!matchMedia('(hover: hover)').matches) return;
+  shownList.slice(from, from + count).forEach((t, i) => setTimeout(() => preloadArt(t), i * 60));
+}
+
+// 'row' mode: put the winner's art behind the hovered tournament and fade it in (the row keeps its size and text)
+function showRowArt(btn, pics) {
+  if (!pics.length) return;
+  let el = btn.querySelector('.row-art');
+  if (!el) {
+    el = document.createElement('span');
+    el.className = 'row-art';
+    el.innerHTML = pics.map((u) => `<img src="${esc(u)}" alt="" fetchpriority="high" decoding="async">`).join('');
+    btn.prepend(el);
+  }
+  void el.offsetWidth; // flush styles so the fade-in runs even on a freshly added element
+  const img = el.querySelector('img');
+  const go = () => { if (peekFor === btn) el.classList.add('on'); };
+  if (img.complete) go(); else img.addEventListener('load', go, { once: true }); // fade in once the art is there, no pop-in
 }
 async function showPeek(btn) {
   const t = shownList[+btn.dataset.i];
   if (!t) return;
-  let rows, art;
-  try { [rows, art] = await Promise.all([getRows(t), artReq]); } catch { return; }
+  const art = await artReq;
+  if (HOVER_PREVIEW === 'row' && t.w) { // winners come with the index (see addWinners in fetch-data.mjs): no request needed
+    if (peekFor === btn && t.w.length) showRowArt(btn, picsOf(t.w, art));
+    return;
+  }
+  let rows;
+  try { rows = await getRows(t); } catch { return; } // older data without winners, or 'card' mode: read the standings file
   if (peekFor !== btn) return; // the mouse moved on while loading
   const w = rows[0]; // the API lists standings in placement order, so the first row is the winner
   if (!w || !w.c.length) return; // no commander submitted: nothing to show, the list works as before
-  const pics = w.c.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2);
+  const pics = picsOf(w.c, art);
+  if (HOVER_PREVIEW === 'row') return showRowArt(btn, pics);
   $('peek-art').hidden = !pics.length;
   $('peek-art').innerHTML = pics.map((u) => `<img src="${esc(u)}" alt="">`).join('');
   $('peek-cmd').textContent = w.c.join(' / ');
@@ -385,7 +446,9 @@ $('area-list').addEventListener('mouseover', (e) => {
   if (!b || b === peekFor) return;
   hidePeek();
   peekFor = b;
-  peekTimer = setTimeout(() => showPeek(b), 120); // short delay: skimming across rows doesn't fire a request per row
+  const i = +b.dataset.i;
+  peekTimer = setTimeout(() => showPeek(b), shownList[i]?.w ? 40 : 120); // short delay so skimming across rows stays calm
+  preloadRows(i + 1, 3);
 });
 $('area-list').addEventListener('mouseleave', hidePeek);
 $('area-list').addEventListener('scroll', hidePeek);

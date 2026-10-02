@@ -176,3 +176,21 @@ async function buildArt() {
   await writeFile(OUT + 'art.json', JSON.stringify(art));
 }
 await buildArt();
+
+// ---- Winner commanders in the index (t.w), so hovering a tournament in the list needs no extra request ----
+// Reads the standings files already on disk, so it needs no TopDeck calls and also works on cached runs.
+async function addWinners() {
+  let index;
+  try { index = JSON.parse(await readFile(OUT + 'tournaments.json', 'utf8')); } catch { return; }
+  let changed = 0;
+  for (const t of index.tournaments) {
+    try {
+      const rows = JSON.parse(await readFile(`${OUT}t/${t.f}.json`, 'utf8'));
+      const w = rows[0]?.c || [];
+      if (JSON.stringify(t.w) !== JSON.stringify(w)) { t.w = w; changed++; }
+    } catch { /* standings file missing: leave as is */ }
+  }
+  if (changed) await writeFile(OUT + 'tournaments.json', JSON.stringify(index)); // `generated` stays untouched
+  console.log(`Winners: ${changed} tournaments updated in the index`);
+}
+await addWinners();
