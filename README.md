@@ -1,4 +1,11 @@
-# [**EDHGlobe**](https://godkayaki.github.io/tournament-visualizer/) ─ Tournament data visualizer for **cEDH**
+# [**EDHGlobe**](https://edhglobe.com/) ─ Tournament data visualizer for **cEDH**
+
+[![Project Status](https://img.shields.io/badge/status-active-success.svg)](https://github.com/Godkayaki/tournament-visualizer)
+[![Deploy](https://github.com/Godkayaki/tournament-visualizer/actions/workflows/deploy.yml/badge.svg)](https://github.com/Godkayaki/tournament-visualizer/actions/workflows/deploy.yml)
+[![EDH Globe Status](https://img.shields.io/http?url=https%3A%2F%2Fedhglobe.com&label=EDH%20Globe&color=brightgreen)](https://edhglobe.com)
+![Scryfall API status](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.scryfall.com%2Fsets&query=%24.object&label=Scryfall%20API%20Status&color=brightgreen&prefix=accesible%20%28&suffix=%29&headers%5BUser-Agent%5D=EDHGlobeApp%2F1.0)  
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js\&logoColor=white)](https://nodejs.org/)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/Godkayaki/tournament-visualizer/blob/main/LICENSE)
 
 **3D globe of past cEDH tournaments (data from [TopDeck.gg](https://topdeck.gg), images from [Scryfall](https://scryfall.com/)) that brings regional metagame share and data to the table.**
 
@@ -13,7 +20,7 @@
 - There are direct filters for the data being shown; these are:
   - **Nº of players** -> Starting at all tournaments to filtering up to tournaments with +100 players.
   - **Time** -> Period of time, going from the last 3 months to all time.
-- Currently **filters out casual tournaments**, a big problem I personally had with [edhtop16](https://edhtop16.com) that I wanted to fix. It does this by basically blocking out specific keywords, kinda simple and breakable but as easily to revert;
+- Currently **filters out casual tournaments**, a big problem I personally had with [edhtop16](https://edhtop16.com) that I wanted to fix. It does this by basically blocking out specific keywords, kinda simple and breakable but as easily to revert. *Note: Even if topdeck was about to add a tag-per-bracket we still would need this for data before that*;
 ```js
 const KEEP = [/\bc\s?edh/i, /bracket\s*5\b/i];
 const BLOCK = [/bracket\s*[1-4]\b/i,
@@ -27,7 +34,9 @@ const BLOCK = [/bracket\s*[1-4]\b/i,
 ];
 const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find((r) => r.test(name)) || null);
 ```
-- The workflow runs on every push and daily at **05:00 AM UTC (12:00 AM EST)**, keeping cacheed data and updating the last month with newer data.
+- Tournament display with viewable commanders and player records.
+- The workflow runs on every push and daily at **05:00 AM UTC (12:00 AM EST)**, keeping cacheed data and updating the last month with newer data. This also applies for Scryfall art.
+- Zero runtime dependencies + Cached data that improves loading speed.
 
 ## Run locally
 
@@ -43,6 +52,8 @@ npx serve site
   - `FORMAT` (default `EDH`).
 
 Usually accessible through `http://localhost:3000`
+
+The first time `node scripts/fetch-data.mjs` is run it fetches data once, storing it on `data/t/art.json` and `data/t/tournaments.json`. After that you don't need to run it again for testing purposes.
 
 ## To-do list
 
@@ -65,9 +76,11 @@ Usually accessible through `http://localhost:3000`
 - ~~Right now, you can not zoom in while having your cursor on top of a Bubbgle, this should be fixed.~~
 - ~~Center off number of tournaments shown.~~
 - ~~Add Privacy policy.~~
-- In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. Hopefully.
+- ~~Add open/close menus animations~~
+- Modify phone view *(not that important since most playerbase will take a look at this from a pc)*
+- *In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. **Hopefully**.*
 
 # 
 
-### **<p align="center"> [EDHGlobe.com](https://godkayaki.github.io/tournament-visualizer/) </p>**
+### **<p align="center"> [EDHGlobe.com](https://edhglobe.com/) </p>**
 <p align="center"> <img src="site/static/logo.svg" width="180"> </p>
