@@ -1,8 +1,7 @@
 # [**EDHGlobe**](https://edhglobe.com/) ─ Tournament data visualizer for **cEDH**
 
-[![Project Status](https://img.shields.io/badge/status-active-success.svg)](https://github.com/Godkayaki/tournament-visualizer)
+[![EDH Globe Status](https://img.shields.io/website?url=https%3A%2F%2Fedhglobe.com&label=EDH%20Globe&up_message=online&up_color=brightgreen&down_message=offline&down_color=red)](https://edhglobe.com)
 [![Deploy](https://github.com/Godkayaki/tournament-visualizer/actions/workflows/deploy.yml/badge.svg)](https://github.com/Godkayaki/tournament-visualizer/actions/workflows/deploy.yml)
-[![EDH Globe Status](https://img.shields.io/http?url=https%3A%2F%2Fedhglobe.com&label=EDH%20Globe&color=brightgreen)](https://edhglobe.com)
 ![Scryfall API status](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.scryfall.com%2Fsets&query=%24.object&label=Scryfall%20API%20Status&color=brightgreen&prefix=accesible%20%28&suffix=%29&headers%5BUser-Agent%5D=EDHGlobeApp%2F1.0)  
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js\&logoColor=white)](https://nodejs.org/)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/Godkayaki/tournament-visualizer/blob/main/LICENSE)
@@ -77,6 +76,7 @@ The first time `node scripts/fetch-data.mjs` is run it fetches data once, storin
 - ~~Center off number of tournaments shown.~~
 - ~~Add Privacy policy.~~
 - ~~Add open/close menus animations~~
+- Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Modify phone view *(not that important since most playerbase will take a look at this from a pc)*
 - *In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. **Hopefully**.*
 
