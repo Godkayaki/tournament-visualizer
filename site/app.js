@@ -55,6 +55,7 @@ mat.specular.set('#000000');
 })();
 
 world.renderer().setPixelRatio(Math.min(devicePixelRatio, 1.5)); // big win on hi-dpi screens
+world.pointOfView({ lat: 38, lng: -39, altitude: 2.5 }); // initial view: mid-Atlantic, between Spain and the US
 world.controls().autoRotate = true;
 world.controls().autoRotateSpeed = 0.2;
 // Auto-rotate: stops on any drag/zoom, resumes after IDLE_MS of no movement,
@@ -159,6 +160,11 @@ function bubble(d) {
   el.style.cssText = `width:${size}px;height:${size}px;font-size:${size > 40 ? 15 : 13}px;--c:${heat(n)};--fg:${n < 10 ? '#1a1206' : '#fff'}`;
   el.innerHTML = `<span class="dot">${n}</span>`;
   el.onclick = (e) => { e.stopPropagation(); showArea(d.items); };
+  // Bubbles sit above the canvas and would swallow the wheel: hand it to the globe's controls so zoom still works
+  el.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    world.renderer().domElement.dispatchEvent(new WheelEvent('wheel', e));
+  }, { passive: false });
   return el;
 }
 
@@ -170,7 +176,7 @@ function visible() {
 function render() {
   const items = visible();
   world.htmlElementsData(cluster(items, RADII[Math.max(tier, 0)]));
-  $('stats').textContent = `${items.length.toLocaleString()} tournaments shown. Drag to rotate, scroll to zoom, click a bubble.`;
+  $('stats').innerHTML = `<b>${items.length.toLocaleString()} tournaments shown</b><small>Drag to rotate, scroll to zoom, click a bubble.</small>`;
 }
 
 // ---- cEDH-only filter, by tournament name (TopDeck's API has no bracket field) ----
