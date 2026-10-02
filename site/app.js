@@ -496,3 +496,6 @@ document.addEventListener('click', (e) => {
   if (pressAt && Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]) > 5) return; // it was a drag
   closeArea();
 });
+
+// Touch screens have no scroll wheel: say "pinch" in the hint under the title
+if (matchMedia('(hover: none)').matches) document.querySelector('#title p').textContent = 'Drag to rotate, pinch to zoom.';
