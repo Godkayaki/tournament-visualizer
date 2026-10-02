@@ -305,7 +305,7 @@ function closePanel(el, ms = 180) {
   el._closeTimer = setTimeout(() => { el.hidden = true; el.classList.remove('closing'); }, ms);
 }
 const openArea = () => openPanel($('area'));
-const closeArea = () => closePanel($('area'));
+const closeArea = () => { hidePeek(); closePanel($('area')); };
 const openModal = () => openPanel($('modal'));
 const closeModal = () => closePanel($('modal'));
 
@@ -321,13 +321,15 @@ function showArea(items) {
 }
 
 function renderList() {
+  hidePeek();
   const byPlayers = $('order-by').value === 'players';
   const list = [...areaItems].sort(byPlayers ? (a, b) => b.p - a.p || b.d - a.d : (a, b) => b.d - a.d);
+  shownList = list;
   $('area-list').innerHTML = list.map((t, i) =>
     `<li><button data-i="${i}">${esc(t.n)}<div class="sub">${fmtDate(t.d)} · <span class="loc">${esc(place(t))}</span> · ${t.p} players</div></button></li>`).join('');
   $('area-list').onclick = (e) => {
     const b = e.target.closest('button');
-    if (b) openTournament(list[+b.dataset.i]);
+    if (b) { hidePeek(); openTournament(list[+b.dataset.i]); }
   };
   $('area-list').scrollTop = 0;
 }
@@ -336,6 +338,53 @@ $('order-by').addEventListener('change', renderList);
 const artReq = fetch('data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
 const MEDAL = ['🥇', '🥈', '🥉'];
 const ord = (n) => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
+
+// ---- Winner preview: hovering a tournament in the list shows its winning commander ----
+// Standings load lazily on hover and are cached, so opening the leaderboard afterwards is instant too.
+const rowsCache = new Map();
+function getRows(t) {
+  if (!rowsCache.has(t.f)) {
+    rowsCache.set(t.f, fetch(`data/t/${t.f}.json`).then((r) => r.json()).catch((err) => { rowsCache.delete(t.f); throw err; }));
+  }
+  return rowsCache.get(t.f);
+}
+
+let shownList = [], peekFor = null, peekTimer;
+function hidePeek() {
+  clearTimeout(peekTimer);
+  peekFor = null;
+  $('peek').classList.remove('on');
+}
+async function showPeek(btn) {
+  const t = shownList[+btn.dataset.i];
+  if (!t) return;
+  let rows, art;
+  try { [rows, art] = await Promise.all([getRows(t), artReq]); } catch { return; }
+  if (peekFor !== btn) return; // the mouse moved on while loading
+  const w = rows[0]; // the API lists standings in placement order, so the first row is the winner
+  if (!w || !w.c.length) return; // no commander submitted: nothing to show, the list works as before
+  const pics = w.c.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2);
+  $('peek-art').hidden = !pics.length;
+  $('peek-art').innerHTML = pics.map((u) => `<img src="${esc(u)}" alt="">`).join('');
+  $('peek-cmd').textContent = w.c.join(' / ');
+  $('peek-player').textContent = `${w.n || 'Unknown Player'} · ${w.w}-${w.l}-${w.d}`;
+  const peek = $('peek'), pr = $('area').getBoundingClientRect(), br = btn.getBoundingClientRect();
+  const left = pr.left - 12 - peek.offsetWidth;
+  if (left < 8) return; // not enough room beside the list (small screens)
+  const minTop = innerWidth <= 900 ? 120 : 72; // stay below the filter bar
+  peek.style.left = `${left}px`;
+  peek.style.top = `${Math.max(minTop, Math.min(innerHeight - peek.offsetHeight - 8, br.top + br.height / 2 - peek.offsetHeight / 2))}px`;
+  peek.classList.add('on');
+}
+$('area-list').addEventListener('mouseover', (e) => {
+  const b = e.target.closest('button[data-i]');
+  if (!b || b === peekFor) return;
+  hidePeek();
+  peekFor = b;
+  peekTimer = setTimeout(() => showPeek(b), 120); // short delay: skimming across rows doesn't fire a request per row
+});
+$('area-list').addEventListener('mouseleave', hidePeek);
+$('area-list').addEventListener('scroll', hidePeek);
 
 async function openTournament(t) {
   $('m-title').textContent = t.n;
@@ -346,7 +395,7 @@ async function openTournament(t) {
   $('m-scroll').scrollTop = 0;
   openModal();
   try {
-    const [rows, art] = await Promise.all([fetch(`data/t/${t.f}.json`).then((r) => r.json()), artReq]);
+    const [rows, art] = await Promise.all([getRows(t), artReq]);
     const imgs = (p) => p.c.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2); // front face only; partners: 2 arts side by side
     const winnerArt = rows[0] && imgs(rows[0])[0];
     if (winnerArt) $('m-banner').style.setProperty('--banner-art', `url("${winnerArt}")`);
