@@ -167,23 +167,22 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
   #area { top: 72px; max-height: calc(100vh - 88px); }
 }
 
-/* Mid-size screens: the filter bar would run into the hint line, so show a compact title (logo + name only) */
-@media (max-width: 1500px) {
-  #title { --logo: 30px; }
-  #title p { display: none; }
+/* Below ~1360px the centered filter bar would run into the logo and title, so it drops underneath them
+   (the full title stays visible: logo + name + hint) */
+@media (max-width: 1360px) {
+  /* the title keeps its usual spot (top 16px, ends at 68px); the bar starts 16px below it */
+  #filters { top: 84px; } /* ends at ~127px */
+  #stats { top: 134px; }
+  #modal { padding-top: 140px; }
+  .card { max-height: calc(100vh - 156px); }
+  #area { top: 136px; max-height: calc(100vh - 152px); }
 }
 
 @media (max-width: 900px) {
-  /* the filter bar drops below the title here: keep a clear gap between the two */
-  #title { --logo: 52px; top: 12px; } /* ends at 64px */
-  #title p { display: block; }
-  #filters { top: 80px; gap: 10px; max-width: calc(100vw - 16px); overflow-x: auto; } /* ends at ~123px */
+  #filters { gap: 10px; max-width: calc(100vw - 16px); overflow-x: auto; }
   #filters .group + .group { padding-left: 10px; }
   #filters span { display: none; }
-  #stats { top: 130px; }
-  #modal { padding-top: 136px; }
-  .card { max-height: calc(100vh - 152px); }
-  #area { top: 132px; max-height: calc(100vh - 244px); } /* below the bar, above the 4-line footer */
+  #area { max-height: calc(100vh - 264px); } /* the 5-line footer reaches under the list here, so keep clear of it */
 }
 
 /* Phones */
@@ -193,11 +192,11 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
   #filters .group { gap: 4px; }
   #filters .group + .group { margin-top: 6px; padding: 6px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   #filters button { flex: 1; padding: 6px 4px; }
-  #stats { top: 176px; font-size: 15px; }
-  #modal { padding-top: 180px; } /* same popup, just clear of the taller filter bar */
-  .card { max-height: calc(100vh - 196px); }
+  #stats { top: 180px; font-size: 15px; }
+  #modal { padding-top: 184px; } /* same popup, just clear of the taller filter bar */
+  .card { max-height: calc(100vh - 200px); }
   /* tournament list: a bottom sheet above the footer, so the globe stays visible (tap it to close the list) */
-  #area { top: auto; left: 8px; right: 8px; bottom: 124px; width: auto; max-height: 42vh; }
+  #area { top: auto; left: 8px; right: 8px; bottom: 128px; width: auto; max-height: 42vh; }
   #area:not([hidden]) { transform-origin: bottom center; animation-name: sheet-in; }
   #area.closing { animation-name: sheet-out; }
 }
