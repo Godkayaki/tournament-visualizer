@@ -10,7 +10,7 @@
 
 **How does it work?** -> `scripts/fetch-data.mjs` calls the [TopDeck API](https://topdeck.gg/docs/tournaments-v2) at **build time** and writes `site/data/tournaments.json` (index) and `site/data/t/<tid>.json` (standings per tournament).
 
-**Why?** -> Well, since I started playing cEDH I've always been surrounded by what seems to be a sentiment of "*my region is the best*" or "*my region has the better meta*". And well, what best way to check meta diversity per region than just looking at the numbers, am I right?
+**Why?** -> Well, since I started playing cEDH I've always been surrounded by what seems to be a sentiment of "*my region is the best*" or "*my region has the worst meta*". And well, what best way to check meta diversity per region than just looking at the numbers, am I right?
 
 ## Features
 
@@ -71,11 +71,16 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
     - Platinum -> +100 players
     - Diamond -> +250 players
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
-- Add accesibility settings & manual keyboard shortcuts + visual menu of them
-- Add color selector to change main color for another neon-like preset
+- Add accesibility settings & manual keyboard shortcuts + visual menu of them.
+- Add color selector to change main color for another neon-like preset.
+
+<details>
+<summary>★ Extra ★</summary>
+
+- Set I'd like to add some sort of way to manual review all data, but that seems like a later-me-problem.
 - *In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. **Hopefully**.*
 
-As an extra, I'd like to add some sort of way to manual review all data, but that seems like a later-me-problem.
+</details>
 
 <details>
 <summary>Done</summary>

@@ -331,6 +331,11 @@ const closeArea = () => { hidePeek(); closePanel($('area')); };
 const openModal = () => openPanel($('modal'));
 const closeModal = () => closePanel($('modal'));
 
+// Tournament size tiers (by number of players): the colored strip on the left of each tournament in the list.
+// Colors live in style.css (#area li button[data-tier=...]); the thresholds are here.
+const TIERS = [[250, 'diamond'], [100, 'platinum'], [50, 'gold'], [30, 'silver'], [16, 'bronze'], [0, 'grey']];
+const tierName = (players) => TIERS.find(([min]) => players >= min)[1];
+
 let areaItems = [];
 
 function showArea(items) {
@@ -359,7 +364,7 @@ function renderList() {
   const list = [...areaItems].sort(byPlayers ? (a, b) => dir * (b.p - a.p) || b.d - a.d : (a, b) => dir * (b.d - a.d)); // ties: most recent first
   shownList = list;
   $('area-list').innerHTML = list.map((t, i) =>
-    `<li><button data-i="${i}">${esc(t.n)}<div class="sub">${fmtDate(t.d)} · <span class="loc">${esc(place(t))}</span> · ${t.p} players</div></button></li>`).join('');
+    `<li><button data-i="${i}" data-tier="${tierName(t.p)}">${esc(t.n)}<div class="sub">${fmtDate(t.d)} · <span class="loc">${esc(place(t))}</span> · ${t.p} players</div></button></li>`).join('');
   $('area-list').onclick = (e) => {
     const b = e.target.closest('button');
     if (b) { hidePeek(); openTournament(list[+b.dataset.i]); }

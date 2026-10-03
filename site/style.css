@@ -37,7 +37,7 @@ a { color: var(--accent); }
 #area h2 { margin: 0 44px 10px 18px; font-size: 17px; }
 #area ul { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; }
 #area li button { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer;
-  padding: 10px 18px; border-top: 1px solid var(--line); }
+  padding: 10px 18px 10px 24px; border-top: 1px solid var(--line); } /* extra room on the left for the tier strip */
 #area li button:hover, #area li button:focus-visible { background: #161b22; }
 #area .sub { color: var(--dim); font-size: 13px; }
 #area .loc { color: var(--accent); }
@@ -98,6 +98,16 @@ body:has(#modal:not([hidden])) :is(#filters, #stats) { opacity: 0; visibility: h
 .row-art::after { content: ""; position: absolute; inset: 0;
   background: linear-gradient(90deg, rgba(13, 17, 23, .95) 0%, rgba(13, 17, 23, .75) 45%, rgba(13, 17, 23, .25) 100%); }
 @media (prefers-reduced-motion: reduce) { .row-art { transition: none; } }
+
+/* Tier strip: fixed-width, rounded bar on the left of each tournament in the list, inset 6px from the row's borders
+   (thresholds: TIERS in app.js). Grey is dark and silver light so they stay apart; platinum is League of Legends' teal. */
+#area li button { --tier: #4b525b; }
+#area li button[data-tier="bronze"] { --tier: #cd7f32; }
+#area li button[data-tier="silver"] { --tier: #c5ccd6; }
+#area li button[data-tier="gold"] { --tier: #f5c518; }
+#area li button[data-tier="platinum"] { --tier: #4e9996; }
+#area li button[data-tier="diamond"] { --tier: #54d2ff; }
+#area li button::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 6px; border-radius: 3px; background: var(--tier); z-index: 1; }
 
 .close { position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0;
   border-radius: 6px; background: transparent; color: var(--dim); font-size: 22px; cursor: pointer; }
