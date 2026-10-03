@@ -65,7 +65,6 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
-- Add color selector to change main color for another neon-like preset.
 
 <details>
 <summary>★ Extra ★</summary>
@@ -74,7 +73,6 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - *In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. **Hopefully**.*
 
 </details>
-
 <details>
 <summary>Done</summary>
 
@@ -96,6 +94,7 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Add viewable "Last updated data timestamp"
 - Modify phone view *(not that important since most playerbase will take a look at this from a pc)*
 - Add +16 players filter.
+- Add color selector to change main color for another neon-like preset.
 
 </details>
 
