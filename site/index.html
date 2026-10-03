@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap">
   <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
 </head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1"></script>
@@ -105,6 +106,19 @@
   </footer>
   <!-- Bottom-right info block. Each <p class="meta-item"> is one line; add new ones below. Hidden on phones (see style.css). -->
   <div id="meta">
+    <!-- Tool buttons, no text. Right to left: color picker, accessibility, keyboard shortcuts (the last two are placeholders for now) -->
+    <div class="meta-tools">
+      <button class="tool" id="tool-keys" type="button" aria-disabled="true" aria-label="Keyboard shortcuts (coming soon)" title="Keyboard shortcuts (coming soon)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M18 14h.01M9.5 14h5"/></svg>
+      </button>
+      <button class="tool" id="tool-access" type="button" aria-disabled="true" aria-label="Accessibility (coming soon)" title="Accessibility (coming soon)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.7" fill="currentColor" stroke="none"/><path d="M5 8.5l7 1.4 7-1.4M12 10v5M12 15l-3 5.5M12 15l3 5.5"/></svg>
+      </button>
+      <div class="tool-wrap">
+        <button class="tool" id="tool-color" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="color-menu" aria-label="Accent color" title="Accent color"><span class="swatch"></span></button>
+        <div id="color-menu" role="menu" aria-label="Accent color" hidden></div>
+      </div>
+    </div>
     <p id="updated" class="meta-item" hidden></p>
   </div>
 

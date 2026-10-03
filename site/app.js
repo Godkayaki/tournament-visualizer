@@ -6,6 +6,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const fmtDate = (ts) => new Date(ts * 1000).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 const place = (t) => [t.c, t.s].filter(Boolean).join(', ') || 'Unknown location';
 
+const accentHex = () => window.EDHTheme?.hex() ?? '#19f5d8'; // current accent (theme.js); the globe takes its neon color from it
+
 const state = { minPlayers: 30, months: 6 }; // defaults; must match the .on buttons in index.html
 let all = [];
 let countries = []; // country polygons (GeoJSON features): drawn as borders and used to name areas
@@ -17,12 +19,12 @@ const tierOf = (alt) => (alt > 2.2 ? 0 : alt > 1.6 ? 1 : alt > 1.0 ? 2 : alt > 0
 
 const world = Globe()($('globe'))
   .backgroundColor('rgba(0,0,0,0)') // transparent: the starfield lives in #stars behind the canvas
-  .atmosphereColor('#19f5d8')
+  .atmosphereColor(accentHex())
   .atmosphereAltitude(0.16)
   .enablePointerInteraction(false) // we only use DOM bubbles; skips costly raycasting on borders
   .polygonCapColor(() => 'rgba(0,0,0,0)')
   .polygonSideColor(() => 'rgba(0,0,0,0)')
-  .polygonStrokeColor(() => '#19f5d8')
+  .polygonStrokeColor(() => accentHex())
   .polygonAltitude(0.003)
   .polygonsTransitionDuration(0)
   .htmlLat('lat')
@@ -30,6 +32,12 @@ const world = Globe()($('globe'))
   .htmlAltitude(0.004)
   .htmlTransitionDuration(0)
   .htmlElement(bubble);
+
+// The globe's neon (atmosphere + country borders) follows the accent color picked in the bottom-right menu
+addEventListener('accentchange', (e) => {
+  world.atmosphereColor(e.detail.hex);
+  world.polygonStrokeColor(() => e.detail.hex);
+});
 
 // Plain dark sphere: no terrain texture, only the neon borders
 const mat = world.globeMaterial();
@@ -522,3 +530,22 @@ document.addEventListener('click', (e) => {
 
 // Touch screens have no scroll wheel: say "pinch" in the hint under the title
 if (matchMedia('(hover: none)').matches) document.querySelector('#title p').textContent = 'Drag to rotate, pinch to zoom.';
+
+// ---- Accent color picker (bottom-right tools). The palette and the saved choice live in theme.js ----
+(function initColorPicker() {
+  const btn = $('tool-color'), menu = $('color-menu');
+  if (!btn || !menu || !window.EDHTheme) return;
+  menu.innerHTML = Object.entries(EDHTheme.PALETTE).map(([key, c]) =>
+    `<button type="button" class="opt" role="menuitemradio" data-color="${key}" style="--c:${c.hex}" aria-label="${c.label}" title="${c.label}"></button>`).join('');
+  const sync = () => menu.querySelectorAll('.opt').forEach((o) => o.setAttribute('aria-checked', String(o.dataset.color === EDHTheme.current)));
+  const setOpen = (open) => { menu.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) sync(); };
+  btn.addEventListener('click', (e) => { e.stopPropagation(); setOpen(menu.hidden); });
+  menu.addEventListener('click', (e) => {
+    const o = e.target.closest('.opt');
+    if (!o) return;
+    EDHTheme.apply(o.dataset.color); // repaints the whole page (CSS variables) and the globe (accentchange)
+    sync();
+  });
+  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target)) setOpen(false); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); } });
+})();

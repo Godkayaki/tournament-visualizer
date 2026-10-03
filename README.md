@@ -63,13 +63,6 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
   - **Shuffleup** -> Still in beta, no API documentation visible, it looks complicated.
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
-- From the tournament list view when selecting a bubble;
-  - Add a small color next to the tournament indicating the tiers of each tournament. This will be based of the topdeck invitational, but it's not just for the tournaments within the invitational, it will also mark tournaments outside. This will also be added to the most recent "big" tournaments later on;
-    - Bronze -> +16 players
-    - Silver -> +30 players
-    - Gold -> +50 players
-    - Platinum -> +100 players
-    - Diamond -> +250 players
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
 - Add color selector to change main color for another neon-like preset.
@@ -90,6 +83,12 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
   - Add order when showing a list of tournaments that lets you also order by number of players. Default will always be from the most recent to the oldest.~~
   - Change the name of the title to better suit the bubble you clicked. Right now it's just printing one of the locations if you are zoomed out. Then move the number of tournaments below that title in a smaller font.~~ *(can be improved)*
   - Clicking on an empty space on the map (or the stars background) should close the tournament listing.
+  - Add a small color next to the tournament indicating the tiers of each tournament. This will be based of the topdeck invitational, but it's not just for the tournaments within the invitational, it will also mark tournaments outside. This will also be added to the most recent "big" tournaments later on;
+    - Bronze -> +16 players
+    - Silver -> +30 players
+    - Gold -> +50 players
+    - Platinum -> +100 players
+    - Diamond -> +250 players
 - Right now, you can not zoom in while having your cursor on top of a Bubbgle, this should be fixed.
 - Center off number of tournaments shown.
 - Add Privacy policy.

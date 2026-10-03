@@ -22,9 +22,8 @@ html.doc #title p { display: block; } /* keep the tagline at every width (the gl
 .summary { border-left: 3px solid var(--accent); padding: 2px 0 2px 16px; margin: 0 0 8px; }
 .summary p { margin: 0; }
 
-html.doc footer { position: static; width: min(760px, calc(100% - 32px)); margin: 24px auto 20px; }
+.policy404 { width: min(760px, calc(100% - 32px)); margin: 28px auto 0; padding: 28px 32px 32px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; line-height: 1.65; }
+.policy404 h2 { margin: 0; font-size: 30px; line-height: 1.2; }
 
-@media (max-width: 600px) {
-  .policy { padding: 22px 18px 26px; }
-  .policy h2 { font-size: 26px; }
-}
+html.doc footer { position: static; width: min(760px, calc(100% - 32px)); margin: 24px auto 20px; }

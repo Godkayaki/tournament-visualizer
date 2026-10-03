@@ -8,6 +8,8 @@
   <!-- root-absolute paths on purpose: this page is served for any missing URL, at any depth -->
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/privacy.css">
+  <script src="/theme.js"></script>
+  <style>html, html.doc body { background: #000; } /* the whole page, not just the body box */</style>
   <script>
     // Safety net: if the host doesn't map /privacy to privacy.html on its own, show that page from here.
     // The address bar keeps saying /privacy. (GitHub Pages normally does this by itself, so this rarely runs.)
@@ -30,10 +32,23 @@
     </a>
   </header>
 
-  <main class="policy">
-    <h2>Page not found</h2>
-    <p>We couldn't find that page. It may have moved, or the link may be wrong.</p>
-    <p><a href="/">Back to the globe</a> &middot; <a href="/privacy">Privacy Policy</a></p>
+  <main class="policy404">
+    <h2>404 - Page not found</h2>
+    <br><p>We couldn't find that page.
+    <br><a href="/">Back to the globe</a></p>
   </main>
+
+  <footer>
+    <div><b>© 2026 EDHGlobe</b> ─ Licensed under <a href="https://github.com/Godkayaki/tournament-visualizer?tab=GPL-3.0-1-ov-file" target="_blank" rel="noopener">GPL-3.0</a></div>
+    <div>Data provided by <a href="https://topdeck.gg" target="_blank" rel="noopener">TopDeck.gg</a> ─ Art provided by <a href="https://scryfall.com/" target="_blank" rel="noopener">Scryfall</a></div>
+    <div>
+      <a href="https://github.com/Godkayaki/tournament-visualizer" target="_blank" rel="noopener">Source code</a>
+      ─ Contact:
+      <a href="https://moxfield.com/users/DrG" target="_blank" rel="noopener">Moxfield</a> ─
+      <a href="https://discord.com/users/212661657980108802" target="_blank" rel="noopener">Discord</a>
+    </div>
+    <div>Support me on <a href="https://ko-fi.com/kayaki" target="_blank" rel="noopener">Ko-Fi</a></div>
+    <div>Check out our <a href="privacy">Privacy Policy</a></div>
+  </footer>
 </body>
 </html>
