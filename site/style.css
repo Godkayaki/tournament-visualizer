@@ -135,6 +135,10 @@ a { color: var(--accent); }
 .rec i:last-child { margin-right: 0; }
 
 footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size: 13px; line-height: 1.6; }
+/* "Data updated 3 hours ago": bottom right, level with the footer's last line (the list panel sits above it) */
+#updated { position: fixed; right: 20px; bottom: 12px; z-index: 0; margin: 0; color: var(--dim); font-size: 13px; line-height: 1.6; text-align: right; }
+#updated[hidden] { display: none; }
+#area { z-index: 1; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 

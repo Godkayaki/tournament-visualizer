@@ -43,7 +43,7 @@ const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find(
 git clone https://github.com/Godkayaki/tournament-visualizer
 TOPDECK_API_KEY=your_key      # In windows; $env:TOPDECK_API_KEY=your_key
 node scripts/fetch-data.mjs   # Node 18+
-npx serve site
+npx serve site                # Start local server
 ```
 - You can get your `TOPDECK_API_KEY` at [Topdeck Dev](https://topdeck.gg/developers).
 - Optional env vars: 
@@ -54,6 +54,8 @@ Usually accessible through `http://localhost:3000`
 
 The first time `node scripts/fetch-data.mjs` is run it fetches data once, storing it on `data/t/art.json` and `data/t/tournaments.json`. After that you don't need to run it again for testing purposes.
 
+As a side note, I've also added a `check-recent.mjs` file that you can run to check the recent tournament status of the last 4-5 days, where you can check the number of players and the reason why it's included or not and if it will be added on the next `fetch-data.mjs` you run.
+
 ## To-do list
 
 - Tournaments without coordinates (online events) are skipped right now. My idea is to have a separate list that is somehow accessible (thinking about adding the moon and be clickable lol).
@@ -61,24 +63,35 @@ The first time `node scripts/fetch-data.mjs` is run it fetches data once, storin
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
   - **Shuffleup** -> Still in beta, no API documentation visible, it looks complicated.
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
-- ~~Set the initial view to the middle of the Atlantic, between Spain and the US.~~
 - From the tournament list view when selecting a bubble;
-  - ~~Add order when showing a list of tournaments that lets you also order by number of players. Default will always be from the most recent to the oldest.~~
-  - ~~Change the name of the title to better suit the bubble you clicked. Right now it's just printing one of the locations if you are zoomed out. Then move the number of tournaments below that title in a smaller font.~~ *(can be improved)*
-  - ~~Clicking on an empty space on the map (or the stars background) should close the tournament listing.~~
   - Add a small color next to the tournament indicating the tiers of each tournament. This will be based of the topdeck invitational, but it's not just for the tournaments within the invitational, it will also mark tournaments outside. This will also be added to the most recent "big" tournaments later on;
     - Bronze -> +16 players
     - Silver -> +30 players
     - Gold -> +50 players
     - Platinum -> +100 players
     - Diamond -> +250 players
-- ~~Right now, you can not zoom in while having your cursor on top of a Bubbgle, this should be fixed.~~
-- ~~Center off number of tournaments shown.~~
-- ~~Add Privacy policy.~~
-- ~~Add open/close menus animations~~
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
-- Modify phone view *(not that important since most playerbase will take a look at this from a pc)*
+- Add +16 players filter.
+- Add accesibility settings & manual keyboard shortcuts + visual menu of them
+- Add color selector to change main color for another neon-like preset
 - *In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. **Hopefully**.*
+
+<details>
+<summary>Done</summary>
+
+- Set the initial view to the middle of the Atlantic, between Spain and the US.
+- From the tournament list view when selecting a bubble;
+  - Add order when showing a list of tournaments that lets you also order by number of players. Default will always be from the most recent to the oldest.~~
+  - Change the name of the title to better suit the bubble you clicked. Right now it's just printing one of the locations if you are zoomed out. Then move the number of tournaments below that title in a smaller font.~~ *(can be improved)*
+  - Clicking on an empty space on the map (or the stars background) should close the tournament listing.
+- Right now, you can not zoom in while having your cursor on top of a Bubbgle, this should be fixed.
+- Center off number of tournaments shown.
+- Add Privacy policy.
+- Add open/close menus animations
+- Add viewable "Last updated data timestamp"
+- Modify phone view *(not that important since most playerbase will take a look at this from a pc)*
+
+</details>
 
 # 
 

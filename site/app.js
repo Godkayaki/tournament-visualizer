@@ -204,9 +204,26 @@ const BLOCK = [/bracket\s*[1-4]\b/i,
 ];
 const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find((r) => r.test(name)) || null);
 
-fetch('data/tournaments.json')
+// When the data was last refreshed (fetch-data.mjs stamps `generated`; code-only deploys don't touch it)
+const ago = (secs) => {
+  const m = Math.round(secs / 60);
+  if (m < 60) return `${Math.max(1, m)} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} hour${h > 1 ? 's' : ''} ago`;
+  const d = Math.round(h / 24);
+  return `${d} day${d > 1 ? 's' : ''} ago`;
+};
+function showUpdated(ts) {
+  if (!ts) return;
+  $('updated').textContent = `Data updated ${ago(Math.max(0, Date.now() / 1000 - ts))}`;
+  $('updated').title = new Date(ts * 1000).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
+  $('updated').hidden = false;
+}
+
+fetch('data/tournaments.json', { cache: 'no-cache' }) // always revalidate, so a fresh deploy shows up without a hard refresh
   .then((r) => r.json())
-  .then(({ tournaments }) => {
+  .then(({ tournaments, generated }) => {
+    showUpdated(generated);
     const hidden = [];
     all = tournaments.filter((t) => {
       const rule = blockedBy(t.n);

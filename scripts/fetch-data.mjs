@@ -108,10 +108,16 @@ if (!skipFetch) {
   }
 
   const byId = new Map(previous.map((t) => [t.id, t]));
+  let noLocation = 0, noStandings = 0;
+  const recentSkips = []; // what we dropped from the last few days, so a "missing" tournament can be explained from the log
+  const skip = (t, why) => {
+    if (t.startDate >= NOW - 5 * 86400) recentSkips.push(`${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${t.tournamentName}  (${why})`);
+  };
   for (const t of seen.values()) {
     const { lat, lng, city, state } = t.eventData || {};
-    if (typeof lat !== 'number' || typeof lng !== 'number') continue; // online / no location
-    if (!t.standings?.length) continue;
+    if (t.startDate > NOW) continue; // future-dated events are staff tests
+    if (typeof lat !== 'number' || typeof lng !== 'number') { noLocation++; skip(t, 'no coordinates'); continue; } // online / no location
+    if (!t.standings?.length) { noStandings++; skip(t, 'no standings'); continue; }
 
     const f = String(t.TID).replace(/[^\w-]/g, '_');
     byId.set(t.TID, {
@@ -128,6 +134,11 @@ if (!skipFetch) {
   const index = [...byId.values()].sort((a, b) => b.d - a.d);
   await writeFile(OUT + 'tournaments.json', JSON.stringify({ generated: NOW, tournaments: index }));
   console.log(`Wrote ${index.length} located tournaments (of ${seen.size} fetched)`);
+  console.log(`Skipped: ${noLocation} without coordinates, ${noStandings} without standings`);
+  const newest = [...seen.values()].sort((a, b) => b.startDate - a.startDate).slice(0, 5);
+  console.log('Newest tournaments returned by the API:');
+  for (const t of newest) console.log(`  ${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${t.tournamentName}`);
+  if (recentSkips.length) { console.log('Skipped from the last 5 days:'); recentSkips.forEach((l) => console.log(`  ${l}`)); }
 }
 
 // ---- Commander art: name -> [front-face art_crop URL], resolved via Scryfall ----
