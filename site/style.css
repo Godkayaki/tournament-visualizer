@@ -30,7 +30,7 @@ a { color: var(--accent); }
   white-space: nowrap; pointer-events: none; color: var(--dim); font-size: 17px; font-weight: 700;
   text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
 
-#area { position: fixed; top: 16px; right: 16px; max-height: calc(100vh - 32px); width: min(380px, calc(100vw - 32px));
+#area { position: fixed; top: 16px; right: 16px; max-height: calc(100vh - 28px); /* bottom edge 12px from the screen bottom, like the footer: it fully covers the bottom-right info block */ width: min(380px, calc(100vw - 32px));
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 0 8px;
   display: flex; flex-direction: column; }
 #area[hidden], #modal[hidden] { display: none; }
@@ -41,6 +41,11 @@ a { color: var(--accent); }
 #area li button:hover, #area li button:focus-visible { background: #161b22; }
 #area .sub { color: var(--dim); font-size: 13px; }
 #area .loc { color: var(--accent); }
+
+/* While the tournament popup is open, the filter bar and counter fade out so the popup can use the whole screen
+   without overlapping them (delete these two rules to keep them visible behind the dimming) */
+#filters, #stats { transition: opacity .18s ease, visibility .18s; }
+body:has(#modal:not([hidden])) :is(#filters, #stats) { opacity: 0; visibility: hidden; }
 
 /* open/close animations (delete this block to remove them; the closing delay in app.js is then harmless) */
 /* Tournament list: slides in from the right */
@@ -99,9 +104,10 @@ a { color: var(--accent); }
 .close:hover { color: var(--text); background: #161b22; }
 
 #modal { position: fixed; inset: 0; z-index: 20; /* above the filter bar, so the dimming covers it too */
-  background: rgba(4, 7, 14, .72); display: grid; place-items: center;
-  padding: 80px 16px 16px; /* top padding keeps the popup clear of the filter bar */ }
-.card { position: relative; width: min(760px, 100%); max-height: calc(100vh - 96px); display: flex; flex-direction: column;
+  background: rgba(4, 7, 14, .72); display: flex; align-items: center; justify-content: center;
+  padding: 24px; } /* same margin on every side */
+/* max-height: 100% follows the visible area of the screen (on phones, 100vh also counts the space under the browser's toolbar) */
+.card { position: relative; width: min(760px, 100%); max-height: 100%; display: flex; flex-direction: column;
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .card .close { z-index: 2; color: var(--text); background: rgba(13, 17, 23, .55); }
 
@@ -135,9 +141,11 @@ a { color: var(--accent); }
 .rec i:last-child { margin-right: 0; }
 
 footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size: 13px; line-height: 1.6; }
-/* "Data updated 3 hours ago": bottom right, level with the footer's last line (the list panel sits above it) */
-#updated { position: fixed; right: 20px; bottom: 12px; z-index: 0; margin: 0; color: var(--dim); font-size: 13px; line-height: 1.6; text-align: right; }
-#updated[hidden] { display: none; }
+/* Bottom-right info block, level with the footer's last line (the list panel sits above it).
+   Every <p class="meta-item"> inside #meta in index.html is one line; the block is hidden on phones (600px block below). */
+#meta { position: fixed; right: 20px; bottom: 12px; z-index: 0; color: var(--dim); font-size: 13px; line-height: 1.6; text-align: right; }
+.meta-item { margin: 0; }
+.meta-item[hidden] { display: none; }
 #area { z-index: 1; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -166,20 +174,18 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
 .bubble:hover { z-index: 10; }
 .bubble:hover .dot { transform: scale(1.25); box-shadow: 0 0 18px var(--c), 0 0 2px rgba(0, 0, 0, .6); }
 
-/* the filter bar would overlap the panel below ~1450px, so the panel starts under it */
-@media (max-width: 1450px) {
-  #area { top: 72px; max-height: calc(100vh - 88px); }
+/* the filter bar would overlap the panel below ~1540px, so the panel starts under it */
+@media (max-width: 1550px) {
+  #area { top: 72px; max-height: calc(100vh - 84px); }
 }
 
-/* Below ~1360px the centered filter bar would run into the logo and title, so it drops underneath them
+/* Below ~1375px the centered filter bar would run into the logo and title, so it drops underneath them
    (the full title stays visible: logo + name + hint) */
-@media (max-width: 1360px) {
+@media (max-width: 1400px) {
   /* the title keeps its usual spot (top 16px, ends at 68px); the bar starts 16px below it */
   #filters { top: 84px; } /* ends at ~127px */
   #stats { top: 134px; }
-  #modal { padding-top: 140px; }
-  .card { max-height: calc(100vh - 156px); }
-  #area { top: 136px; max-height: calc(100vh - 152px); }
+  #area { top: 136px; max-height: calc(100vh - 148px); }
 }
 
 @media (max-width: 900px) {
@@ -197,8 +203,8 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
   #filters .group + .group { margin-top: 6px; padding: 6px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   #filters button { flex: 1; padding: 6px 4px; }
   #stats { top: 180px; font-size: 15px; }
-  #modal { padding-top: 184px; } /* same popup, just clear of the taller filter bar */
-  .card { max-height: calc(100vh - 200px); }
+  #meta { display: none; } /* bottom-right info block */
+  #modal { padding: 16px; }
   /* tournament list: a bottom sheet above the footer, so the globe stays visible (tap it to close the list) */
   #area { top: auto; left: 8px; right: 8px; bottom: 128px; width: auto; max-height: 42vh; }
   #area:not([hidden]) { transform-origin: bottom center; animation-name: sheet-in; }

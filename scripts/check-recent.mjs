@@ -14,6 +14,7 @@ const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
 const HEADERS = { Authorization: KEY, 'Content-Type': 'application/json' };
 const CEDH = /\bc\s?edh|bracket\s*5\b/i;
 const NOW = Math.floor(Date.now() / 1000);
+const FETCHED = process.env.FORMAT || 'EDH'; // the only format fetch-data.mjs downloads
 
 let indexed = new Set();
 try { indexed = new Set(JSON.parse(await readFile(OUT + 'tournaments.json', 'utf8')).tournaments.map((t) => t.id)); }
@@ -31,12 +32,12 @@ const where = (e = {}) => ['city', 'state', 'address'].map((k) => e[k]).filter(B
 
 const totals = {};
 const noCoordsCedh = [];
-for (const format of ['EDH', 'Casual EDH', 'Other']) {
+for (const format of [...new Set([FETCHED, 'Casual EDH', 'Other'])]) {
   let list;
   try { list = await search(format); } catch (err) { console.log(`\n${format}: request failed (${err.message})`); continue; }
   // other formats are only listed when the name looks like cEDH: an organizer may have picked the wrong format
-  const rows = list.filter((t) => format === 'EDH' || CEDH.test(t.tournamentName)).sort((a, b) => b.startDate - a.startDate);
-  console.log(`\n${format}: ${list.length} completed tournaments in the last ${DAYS} days` + (format === 'EDH' ? '' : ` (listing the ${rows.length} named cEDH / Bracket 5)`));
+  const rows = list.filter((t) => format === FETCHED || CEDH.test(t.tournamentName)).sort((a, b) => b.startDate - a.startDate);
+  console.log(`\n${format}: ${list.length} completed tournaments in the last ${DAYS} days` + (format === FETCHED ? '' : ` (listing the ${rows.length} named cEDH / Bracket 5)`));
   for (const t of rows) {
     const { lat, lng } = t.eventData || {};
     let verdict;
@@ -45,10 +46,11 @@ for (const format of ['EDH', 'Casual EDH', 'Other']) {
       verdict = 'NO COORDINATES: skipped';
       if (CEDH.test(t.tournamentName)) noCoordsCedh.push(t);
     } else if (!t.standings?.length) verdict = 'NO STANDINGS: skipped';
+    else if (format !== FETCHED) verdict = `NOT FETCHED (format: ${format})`; // fetch-data.mjs never asks for this format
     else verdict = indexed.has(t.TID) ? 'in the index' : 'new: added on the next run';
     totals[verdict] = (totals[verdict] || 0) + 1;
     const loc = verdict.startsWith('NO COORD') ? `  [location data: ${where(t.eventData) || 'none'}]` : '';
-    console.log(`${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${String(t.standings?.length ?? 0).padStart(3)} players  ${verdict.padEnd(26)} ${t.tournamentName}${loc}`);
+    console.log(`${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${String(t.standings?.length ?? 0).padStart(3)} players  ${verdict.padEnd(30)} ${t.tournamentName}${loc}`);
   }
 }
 

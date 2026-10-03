@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en" class="doc">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EDHGlobe | Page not found</title>
+  <link rel="icon" href="/static/logo.ico" sizes="any">
+  <!-- root-absolute paths on purpose: this page is served for any missing URL, at any depth -->
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/privacy.css">
+  <script>
+    // Safety net: if the host doesn't map /privacy to privacy.html on its own, show that page from here.
+    // The address bar keeps saying /privacy. (GitHub Pages normally does this by itself, so this rarely runs.)
+    (function () {
+      if (location.pathname.replace(/\/+$/, '') !== '/privacy') return;
+      fetch('/privacy.html')
+        .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+        .then(function (html) { document.open(); document.write(html); document.close(); })
+        .catch(function () {});
+    })();
+  </script>
+</head>
+<body>
+  <header id="title">
+    <a class="brand" href="/" aria-label="EDHGlobe: back to the globe">
+      <img src="/static/logo.svg" alt="">
+      <div>
+        <h1>EDHGlobe</h1>
+      </div>
+    </a>
+  </header>
+
+  <main class="policy">
+    <h2>Page not found</h2>
+    <p>We couldn't find that page. It may have moved, or the link may be wrong.</p>
+    <p><a href="/">Back to the globe</a> &middot; <a href="/privacy">Privacy Policy</a></p>
+  </main>
+</body>
+</html>

@@ -76,6 +76,8 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Add color selector to change main color for another neon-like preset
 - *In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. **Hopefully**.*
 
+As an extra, I'd like to add some sort of way to manual review all data, but that seems like a later-me-problem.
+
 <details>
 <summary>Done</summary>
 

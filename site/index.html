@@ -35,6 +35,7 @@
     <div class="group" data-key="minPlayers">
       <span>Players</span>
       <button data-v="0" aria-pressed="false">All</button>
+      <button data-v="16" aria-pressed="false">16+</button>
       <button data-v="30" class="on" aria-pressed="true">30+</button>
       <button data-v="50" aria-pressed="false">50+</button>
       <button data-v="100" aria-pressed="false">100+</button>
@@ -100,9 +101,12 @@
       <a href="https://discord.com/users/212661657980108802" target="_blank" rel="noopener">Discord</a>
     </div>
     <div>Support me on <a href="https://ko-fi.com/kayaki" target="_blank" rel="noopener">Ko-Fi</a></div>
-    <div>Check out our <a href="privacy.html">Privacy Policy</a></div>
+    <div>Check out our <a href="privacy">Privacy Policy</a></div>
   </footer>
-  <p id="updated" hidden></p>
+  <!-- Bottom-right info block. Each <p class="meta-item"> is one line; add new ones below. Hidden on phones (see style.css). -->
+  <div id="meta">
+    <p id="updated" class="meta-item" hidden></p>
+  </div>
 
   <script src="https://unpkg.com/globe.gl@2"></script>
   <script src="app.js"></script>

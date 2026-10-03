@@ -215,8 +215,9 @@ const ago = (secs) => {
 };
 function showUpdated(ts) {
   if (!ts) return;
-  $('updated').textContent = `Data updated ${ago(Math.max(0, Date.now() / 1000 - ts))}`;
-  $('updated').title = new Date(ts * 1000).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC';
+  const utc = new Date(ts * 1000).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' });
+  $('updated').textContent = `Data updated: ${utc} UTC`; // e.g. "Data updated: 3 Oct 2026, 05:22 UTC" (always UTC, whatever the visitor's timezone)
+  $('updated').title = ago(Math.max(0, Date.now() / 1000 - ts)); // hover: "3 hours ago"
   $('updated').hidden = false;
 }
 
