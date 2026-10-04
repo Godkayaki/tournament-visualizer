@@ -8,7 +8,7 @@
 //   SKIP_IF_CACHED=1 skips the TopDeck fetch when cached data exists (used on code-only pushes).
 //   Commander art (Scryfall art_crop URLs) is resolved here too and stored in site/data/art.json.
 
-import { mkdir, writeFile, readFile, readdir } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, readdir, appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const KEY = process.env.TOPDECK_API_KEY;
@@ -78,13 +78,22 @@ function commanders(p) {
     .filter(Boolean);
 }
 
+const iso = (ts) => new Date(ts * 1000).toISOString().slice(0, 16).replace('T', ' ') + 'Z';
+// Writes to the run's summary page in GitHub Actions (Actions tab > the run > Summary). No-op when run locally.
+async function summary(lines) {
+  if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+}
+const trigger = process.env.GITHUB_EVENT_NAME || 'local';
+
 let previous = [];
 let from = START;
 let skipFetch = false;
+let prevGenerated = null;
 if (!process.env.FULL) {
   try {
     const prev = JSON.parse(await readFile(OUT + 'tournaments.json', 'utf8'));
     previous = prev.tournaments;
+    prevGenerated = prev.generated;
     if (process.env.SKIP_IF_CACHED) {
       skipFetch = true;
       console.log('Cached data found, skipping tournament fetch');
@@ -139,6 +148,22 @@ if (!skipFetch) {
   console.log('Newest tournaments returned by the API:');
   for (const t of newest) console.log(`  ${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${t.tournamentName}`);
   if (recentSkips.length) { console.log('Skipped from the last 5 days:'); recentSkips.forEach((l) => console.log(`  ${l}`)); }
+  console.log(`Data stamp (what the footer shows): ${iso(NOW)}`);
+  console.log(`Newest tournament in the index: ${index[0] ? `${iso(index[0].d)}  ${index[0].n}` : 'none'}`);
+  await summary([
+    '### Tournament data',
+    '| | |', '|---|---|',
+    `| Trigger | ${trigger} |`,
+    `| Data stamp (footer) | ${iso(NOW)} |`,
+    `| Fetched since | ${iso(from)} |`,
+    `| Fetched / now in the index | ${seen.size} / ${index.length} |`,
+    `| Skipped | ${noLocation} without coordinates, ${noStandings} without standings |`,
+    `| Newest returned by the API | ${newest[0] ? `${iso(newest[0].startDate)} ${newest[0].tournamentName}` : 'none'} |`,
+    `| Newest in the index | ${index[0] ? `${iso(index[0].d)} ${index[0].n}` : 'none'} |`,
+    '',
+  ]);
+} else {
+  await summary(['### Tournament data', `Code-only deploy (trigger: ${trigger}): reused the cached data, stamp unchanged: ${prevGenerated ? iso(prevGenerated) : 'unknown'}`, '']);
 }
 
 // ---- Commander art: name -> [front-face art_crop URL], resolved via Scryfall ----
