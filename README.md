@@ -34,8 +34,9 @@ const BLOCK = [/bracket\s*[1-4]\b/i,
 const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find((r) => r.test(name)) || null);
 ```
 - Tournament display with viewable commanders and player records.
-- The workflow runs on every push and daily at **05:00 AM UTC (12:00 AM EST)**, keeping cacheed data and updating the last month with newer data. This also applies for Scryfall art.
+- The workflow runs on every push (*on push data does not get updated*) and daily at **05:00 AM UTC (12:00 AM EST)**, keeping cacheed data and updating the last month with newer data. This also applies for Scryfall art. I've also added a visual timestamp on the down-right corner that points the last time the data was updated.
 - Zero runtime dependencies + Cached data that improves loading speed.
+- Accent color picker.
 
 ## Run locally
 
@@ -65,6 +66,7 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
+- Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
 
 <details>
 <summary>★ Extra ★</summary>
@@ -72,8 +74,7 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Set I'd like to add some sort of way to manual review all data, but that seems like a later-me-problem.
 - *In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. **Hopefully**.*
 
-</details>
-<details>
+</details><details>
 <summary>Done</summary>
 
 - Set the initial view to the middle of the Atlantic, between Spain and the US.
