@@ -229,9 +229,19 @@ function showUpdated(ts) {
   $('updated').hidden = false;
 }
 
+// Site version, taken from tournaments.json (fetch-data.mjs stamps it from the repo VERSION file).
+function showVersion(v) {
+  if (!v) return;
+  const el = $('version');
+  el.textContent = `Version: ${v}`;
+  el.title = 'EDHGlobe version';
+  el.hidden = false;
+}
+
 fetch('data/tournaments.json', { cache: 'no-cache' }) // always revalidate, so a fresh deploy shows up without a hard refresh
   .then((r) => r.json())
-  .then(({ tournaments, generated }) => {
+  .then(({ tournaments, generated, version }) => {
+    showVersion(version);
     showUpdated(generated);
     const hidden = [];
     all = tournaments.filter((t) => {

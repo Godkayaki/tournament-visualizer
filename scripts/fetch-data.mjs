@@ -20,6 +20,12 @@ const NOW = Math.floor(Date.now() / 1000);
 const STEP = 14 * 86400; // 14-day windows keep each response small
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
 
+// Repo version-number file -> tournaments.json, so the front-end can show it without an extra request.
+// Missing file (someone deleted it) degrades to 'unknown' rather than crashing the build.
+let version = 'unknown';
+try { version = (await readFile(fileURLToPath(new URL('../version-number', import.meta.url)), 'utf8')).trim(); }
+catch { /* keep 'unknown' */ }
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function query(start, end) {
@@ -141,7 +147,7 @@ if (!skipFetch) {
   }
 
   const index = [...byId.values()].sort((a, b) => b.d - a.d);
-  await writeFile(OUT + 'tournaments.json', JSON.stringify({ generated: NOW, tournaments: index }));
+  await writeFile(OUT + 'tournaments.json', JSON.stringify({ generated: NOW, version, tournaments: index }));
   console.log(`Wrote ${index.length} located tournaments (of ${seen.size} fetched)`);
   console.log(`Skipped: ${noLocation} without coordinates, ${noStandings} without standings`);
   const newest = [...seen.values()].sort((a, b) => b.startDate - a.startDate).slice(0, 5);
@@ -154,6 +160,7 @@ if (!skipFetch) {
     '### Tournament data',
     '| | |', '|---|---|',
     `| Trigger | ${trigger} |`,
+    `| Version | ${version} |`,
     `| Data stamp (footer) | ${iso(NOW)} |`,
     `| Fetched since | ${iso(from)} |`,
     `| Fetched / now in the index | ${seen.size} / ${index.length} |`,
@@ -226,7 +233,7 @@ async function addWinners() {
       if (JSON.stringify(t.w) !== JSON.stringify(w)) { t.w = w; changed++; }
     } catch { /* standings file missing: leave as is */ }
   }
-  if (changed) await writeFile(OUT + 'tournaments.json', JSON.stringify(index)); // `generated` stays untouched
+  if (changed) await writeFile(OUT + 'tournaments.json', JSON.stringify(index)); // `generated` and `version` both survive
   console.log(`Winners: ${changed} tournaments updated in the index`);
 }
 await addWinners();
