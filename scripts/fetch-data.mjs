@@ -22,6 +22,7 @@ const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
 
 // Repo version-number file -> tournaments.json, so the front-end can show it without an extra request.
 // Missing file (someone deleted it) degrades to 'unknown' rather than crashing the build.
+// The stamp also runs on SKIP_IF_CACHED deploys, so a code push updates the footer without refetching TopDeck.
 let version = 'unknown';
 try { version = (await readFile(fileURLToPath(new URL('../version-number', import.meta.url)), 'utf8')).trim(); }
 catch { /* keep 'unknown' */ }
@@ -170,7 +171,12 @@ if (!skipFetch) {
     '',
   ]);
 } else {
-  await summary(['### Tournament data', `Code-only deploy (trigger: ${trigger}): reused the cached data, stamp unchanged: ${prevGenerated ? iso(prevGenerated) : 'unknown'}`, '']);
+  await summary([
+    '### Tournament data',
+    `Code-only deploy (trigger: ${trigger}): reused the cached data, stamp unchanged: ${prevGenerated ? iso(prevGenerated) : 'unknown'}`,
+    `Version: ${version}`,
+    '',
+  ]);
 }
 
 // ---- Commander art: name -> [front-face art_crop URL], resolved via Scryfall ----
@@ -233,7 +239,23 @@ async function addWinners() {
       if (JSON.stringify(t.w) !== JSON.stringify(w)) { t.w = w; changed++; }
     } catch { /* standings file missing: leave as is */ }
   }
-  if (changed) await writeFile(OUT + 'tournaments.json', JSON.stringify(index)); // `generated` and `version` both survive
+  if (changed) await writeFile(OUT + 'tournaments.json', JSON.stringify(index)); // `generated` survives; version is re-stamped below
   console.log(`Winners: ${changed} tournaments updated in the index`);
 }
 await addWinners();
+
+// Code-only deploys skip the TopDeck rewrite, so the cached index would keep the old
+// footer version. Always copy version-number onto the index without touching `generated`.
+async function stampVersion() {
+  let index;
+  try { index = JSON.parse(await readFile(OUT + 'tournaments.json', 'utf8')); }
+  catch { return; }
+  if (index.version === version) {
+    console.log(`Version already ${version}`);
+    return;
+  }
+  index.version = version;
+  await writeFile(OUT + 'tournaments.json', JSON.stringify(index));
+  console.log(`Stamped version ${version} onto tournaments.json`);
+}
+await stampVersion();
