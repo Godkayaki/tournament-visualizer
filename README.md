@@ -67,12 +67,15 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
 - Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
+- Add a "featured tournaments", manually featuring a couple of relevant tournaments that might take place in the future (these should be added manually).
+- Add auto-updateable versioning (this will help track when things break). Format -> `v[YEAR].[MONTH].[TWO-DIGIT-NUMBER]`
 
 <details>
 <summary>★ Extra ★</summary>
 
 - Set I'd like to add some sort of way to manual review all data, but that seems like a later-me-problem.
 - *In a perfect world where I am either bored or there are no other priorities in this development I might start adding both easter egges mtg-related in the world view or the background. **Hopefully**.*
+- Decklist view - This is something really not needed, topdeck already provides a list visualization of the decklist, but it'd be cool to have all the information on the same page, so hopefully this will be implemented at some point in time.
 
 </details><details>
 <summary>Done</summary>
