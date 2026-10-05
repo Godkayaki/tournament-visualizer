@@ -68,6 +68,7 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
 - Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
 - Add a "featured tournaments", manually featuring a couple of relevant tournaments that might take place in the future (these should be added manually).
+- Add auto-updateable versioning (this will help track when things break). Format -> `v[YEAR].[MONTH].[NUMBER]`
 
 <details>
 <summary>★ Extra ★</summary>
@@ -99,7 +100,6 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Add +16 players filter.
 - Add color selector to change main color for another neon-like preset.
 - Fixed data fetching - This has taken more time than I thought it would take at first honestly
-- Add auto-updateable versioning (this will help track when things break). Format -> `v[YEAR].[MONTH].[NUMBER]`
 
 </details>
 
