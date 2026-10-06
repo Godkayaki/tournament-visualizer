@@ -3,26 +3,58 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EDHGlobe | cEDH Tournament data visualizer</title>
+  <title>EDHGlobe | cEDH Tournaments &amp; Metagame on a 3D Globe</title>
+  <meta name="description" content="Explore cEDH tournaments on an interactive 3D globe: results, winning commanders and regional metagame data from TopDeck.gg.">
+  <link rel="canonical" href="https://edhglobe.com/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#0d1117">
+
+  <!-- Link previews (Discord, WhatsApp, Telegram, Facebook, LinkedIn, X/Twitter…). The image must be a PNG/JPG, 1200x630. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="EDHGlobe">
+  <meta property="og:title" content="EDHGlobe | cEDH Tournaments &amp; Metagame on a 3D Globe">
+  <meta property="og:description" content="Explore cEDH tournaments on an interactive 3D globe: results, winning commanders and regional metagame data from TopDeck.gg.">
+  <meta property="og:url" content="https://edhglobe.com/">
+  <meta property="og:image" content="https://edhglobe.com/static/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="EDHGlobe logo: 3D globe of cEDH tournaments">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "EDHGlobe",
+    "url": "https://edhglobe.com/",
+    "description": "Explore cEDH tournaments on an interactive 3D globe: results, winning commanders and regional metagame data from TopDeck.gg.",
+    "inLanguage": "en"
+  }
+  </script>
   <link rel="icon" href="static/logo.ico" sizes="any">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com"> <!-- globe.gl -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin> <!-- country borders -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/theme.js"></script>
-</head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-  gtag('config', 'G-3VG8KXHHG1');
-</script>
+    gtag('config', 'G-3VG8KXHHG1');
+  </script>
+</head>
 <body>
   <div id="stars" aria-hidden="true"><div class="layer" id="stars-far"></div><div class="layer" id="stars-near"></div></div>
   <div id="globe"></div>
+  <noscript>
+    <p style="position:fixed;inset:0;z-index:5;display:grid;place-items:center;margin:0;padding:24px;text-align:center;color:#c9d3e8;font:16px/1.6 system-ui,sans-serif">EDHGlobe is an interactive 3D globe of past cEDH tournaments, with results, winning commanders and regional metagame data from TopDeck.gg. Please enable JavaScript to use it.</p>
+  </noscript>
 
   <header id="title">
     <img src="static/logo.svg" alt="">
