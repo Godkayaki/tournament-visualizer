@@ -266,10 +266,11 @@ $('filters').addEventListener('click', (e) => {
   b.classList.add('on');
   b.setAttribute('aria-pressed', 'true');
   state[g.dataset.key] = +b.dataset.v;
-  const keepRecent = areaRecent && !$('area').hidden;
-  if (!keepRecent) closeArea();
+  const keep = !$('area').hidden && (areaKind === 'recent' || areaKind === 'featured'); // these two lists stay open
+  const wasRecent = areaKind === 'recent';
+  if (!keep) closeArea();
   render();
-  if (keepRecent) showRecent(); // the recent list follows the players filter
+  if (wasRecent && keep) showRecent(); // the recent list follows the players filter; featured doesn't depend on filters
 });
 
 // ---- Naming an area from its tournaments ----
@@ -348,7 +349,7 @@ function closePanel(el, ms = 180) {
   el._closeTimer = setTimeout(() => { el.hidden = true; el.classList.remove('closing'); }, ms);
 }
 const openArea = () => openPanel($('area'));
-const closeArea = () => { hidePeek(); closePanel($('area')); areaRecent = false; syncRecentBtn(); };
+const closeArea = () => { hidePeek(); closePanel($('area')); areaKind = ''; syncBtns(); };
 const openModal = () => openPanel($('modal'));
 const closeModal = () => closePanel($('modal'));
 
@@ -358,23 +359,27 @@ const TIERS = [[250, 'diamond'], [100, 'platinum'], [50, 'gold'], [30, 'silver']
 const tierName = (players) => TIERS.find(([min]) => players >= min)[1];
 
 let areaItems = [];
-let areaRecent = false; // true while the list is the "Recent tournaments" one (not a bubble)
+let areaKind = ''; // what the list panel is showing: '' = a bubble, 'recent' = "Recent tournaments", 'featured' = "Featured"
 
-// Highlights the "Recent tournaments" button while its list is open
-const syncRecentBtn = () => $('recent').setAttribute('aria-pressed', String(areaRecent));
+// Highlights the button (Recent / Featured) whose list is open
+const syncBtns = () => {
+  $('recent').setAttribute('aria-pressed', String(areaKind === 'recent'));
+  $('featured').setAttribute('aria-pressed', String(areaKind === 'featured'));
+};
 
-// opts.title / opts.sub override the default heading (location name + "N tournaments found")
+// opts.kind / opts.title / opts.sub: used by the Recent and Featured lists to replace the default heading
+// (location name + "N tournaments found")
 function showArea(items, opts = {}) {
   areaItems = items;
-  areaRecent = !!opts.recent;
-  syncRecentBtn();
+  areaKind = opts.kind || '';
+  syncBtns();
   const sub = opts.sub ?? `${items.length} tournament${items.length > 1 ? 's' : ''} found`;
   $('area-title').innerHTML = `${esc(opts.title ?? areaName(items))}<small style="display:block;margin-top:2px;font-size:13px;font-weight:400;color:var(--dim)">${esc(sub)}</small>`;
   $('order-by').value = 'date'; // every new list starts from the most recent...
   $('order-dir').value = 'desc'; // ...first
   syncDirLabels();
-  $('order').hidden = items.length < 2; // nothing to sort with a single tournament
-  renderList();
+  $('order').hidden = items.length < 2 || areaKind === 'featured'; // nothing to sort with a single tournament; featured events are always by date
+  if (areaKind === 'featured') renderFeatured(); else renderList();
   openArea();
 }
 
@@ -408,12 +413,57 @@ function showRecent() {
   const items = all.filter((t) => t.p >= state.minPlayers).sort((a, b) => b.d - a.d).slice(0, RECENT_COUNT);
   if (!items.length) return;
   const size = state.minPlayers ? `${state.minPlayers}+ players` : 'all sizes';
-  showArea(items, { recent: true, title: 'Recent tournaments', sub: `${items.length} most recent · ${size}` });
+  showArea(items, { kind: 'recent', title: 'Recent tournaments', sub: `${items.length} most recent · ${size}` });
 }
-$('recent').addEventListener('click', () => {
-  if (areaRecent && !$('area').hidden && !$('area').classList.contains('closing')) closeArea(); // second click closes it
-  else showRecent();
-});
+
+// ---- Featured tournaments: upcoming events added by hand in featured.json (next to index.html) ----
+// Each entry: { "name": "...", "location": "...", "date": "YYYY-MM-DD", "url": "https://topdeck.gg/...", "price": "€35" }
+// Past events disappear on their own (the day of the event still counts); with none upcoming the button stays hidden.
+let featured = [];
+const dayTs = (iso) => { // "2026-11-14" -> local midnight, in seconds
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso ?? '').trim());
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() / 1000 : NaN;
+};
+fetch('featured.json', { cache: 'no-cache' }) // always revalidate, so an edit shows up without a hard refresh
+  .then((r) => (r.ok ? r.json() : []))
+  .then((list) => {
+    const now = Date.now() / 1000;
+    featured = (Array.isArray(list) ? list : [])
+      .map((f) => ({ ...f, ts: dayTs(f?.date) }))
+      .filter((f) => {
+        const ok = f.name && Number.isFinite(f.ts) && /^https?:\/\//i.test(f.url || '');
+        if (!ok) console.warn('[EDHGlobe] featured.json: skipped an entry (needs name, date as YYYY-MM-DD and an http(s) url)', f);
+        return ok;
+      })
+      .filter((f) => f.ts + 86400 > now)
+      .sort((a, b) => a.ts - b.ts); // soonest first
+    $('featured').hidden = !featured.length;
+  })
+  .catch(() => { /* no file or invalid JSON: no featured button */ });
+
+function showFeatured() {
+  if (!featured.length) return;
+  showArea(featured, { kind: 'featured', title: 'Featured tournaments', sub: `${featured.length} upcoming` });
+}
+function renderFeatured() {
+  hidePeek();
+  shownList = [];
+  $('area-list').onclick = null; // rows are plain links
+  $('area-list').innerHTML = areaItems.map((f) => {
+    const price = f.price != null && f.price !== '' ? ` · <span class="price">${esc(f.price)}</span>` : '';
+    const where = f.location ? ` · <span class="loc">${esc(f.location)}</span>` : '';
+    return `<li><a class="feat" href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.name)} ↗<div class="sub">${fmtDate(f.ts)}${where}${price}</div></a></li>`;
+  }).join('');
+  $('area-list').scrollTop = 0;
+}
+
+// Clicking a list button opens its list; clicking it again while that list is open closes it
+const toggleList = (kind, show) => () => {
+  if (areaKind === kind && !$('area').hidden && !$('area').classList.contains('closing')) closeArea();
+  else show();
+};
+$('recent').addEventListener('click', toggleList('recent', showRecent));
+$('featured').addEventListener('click', toggleList('featured', showFeatured));
 
 $('order-by').addEventListener('change', () => { $('order-dir').value = 'desc'; syncDirLabels(); renderList(); }); // a new order always starts at Newest / Most
 $('order-dir').addEventListener('change', renderList);

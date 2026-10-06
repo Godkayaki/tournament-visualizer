@@ -32,10 +32,11 @@ a { color: var(--accent); }
 #statsbar { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
   white-space: nowrap; pointer-events: none; } /* only the button takes clicks */
 #stats { color: var(--dim); font-size: 17px; font-weight: 700; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
-#recent { pointer-events: auto; font: inherit; font-size: 13px; padding: 3px 12px; color: var(--accent); cursor: pointer;
+#recent, #featured { pointer-events: auto; font: inherit; font-size: 13px; padding: 3px 12px; color: var(--accent); cursor: pointer;
   border: 1px solid var(--accent); border-radius: 999px; background: rgba(13, 17, 23, .6); }
-#recent:hover:not(:disabled), #recent[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+#recent:hover:not(:disabled), #featured:hover, #recent[aria-pressed="true"], #featured[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 #recent:disabled { opacity: .45; cursor: default; }
+#featured[hidden] { display: none; }
 
 #area { position: fixed; top: 16px; right: 16px; max-height: calc(100vh - 28px); /* bottom edge 12px from the screen bottom, like the footer: it fully covers the bottom-right info block */ width: min(380px, calc(100vw - 32px));
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 0 8px;
@@ -115,6 +116,14 @@ body:has(#modal:not([hidden])) :is(#filters, #statsbar) { opacity: 0; visibility
 #area li button[data-tier="platinum"] { --tier: #4e9996; }
 #area li button[data-tier="diamond"] { --tier: #54d2ff; }
 #area li button::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 6px; border-radius: 3px; background: var(--tier); z-index: 1; }
+
+/* Featured (upcoming) tournaments in the list panel: each row is a link to TopDeck, with an accent-colored strip
+   where the past tournaments have their tier color */
+#area li a.feat { position: relative; display: block; padding: 10px 18px 10px 24px; border-top: 1px solid var(--line);
+  color: var(--text); text-decoration: none; }
+#area li a.feat:hover, #area li a.feat:focus-visible { background: #161b22; }
+#area li a.feat::before { content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px; width: 6px; border-radius: 3px; background: var(--accent); }
+#area .price { color: var(--text); font-weight: 600; }
 
 .close { position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0;
   border-radius: 6px; background: transparent; color: var(--dim); font-size: 22px; cursor: pointer; }
@@ -242,7 +251,7 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
   #filters .group { gap: 4px; }
   #filters .group + .group { margin-top: 6px; padding: 6px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   #filters button { flex: 1; padding: 6px 4px; }
-  #statsbar { top: 180px; }
+  #statsbar { top: 180px; flex-wrap: wrap; justify-content: center; width: calc(100vw - 16px); row-gap: 6px; } /* counter + buttons wrap onto two lines */
   #stats { font-size: 15px; }
   #meta { display: none; } /* bottom-right info block */
   #modal { padding: 16px; }
