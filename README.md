@@ -66,8 +66,7 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
-- Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
-- Add a "featured tournaments", manually featuring a couple of relevant tournaments that might take place in the future (these should be added manually).
+- Clean app.js. Also... it's time to clean up the code, I didn't expect for this to end up being so huge.
 
 <details>
 <summary>★ Extra ★</summary>
@@ -100,6 +99,8 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Add color selector to change main color for another neon-like preset.
 - Fixed data fetching - This has taken more time than I thought it would take at first honestly
 - Add auto-updateable versioning (this will help track when things break). Format -> `v[YEAR].[MONTH].[NUMBER]` 
+- Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
+- Add a "featured tournaments", manually featuring a couple of relevant tournaments that might take place in the future (these should be added manually).
 
 </details>
 
