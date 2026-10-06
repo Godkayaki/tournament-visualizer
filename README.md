@@ -67,6 +67,7 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
 - Clean app.js. Also... it's time to clean up the code, I didn't expect for this to end up being so huge.
+- Fix scroll not resetting when entering on tournament.
 
 <details>
 <summary>★ Extra ★</summary>

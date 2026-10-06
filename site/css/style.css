@@ -15,7 +15,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
 #globe { position: fixed; inset: 0; }
 
-/* Starfield: two tiled layers drawn at the screen's pixel ratio (see app.js), so stars stay sharp */
+/* Starfield: two tiled layers drawn at the screen's pixel ratio (see js/stars.js), so stars stay sharp */
 #stars { position: fixed; inset: 0; overflow: hidden; pointer-events: none;
   background: #000; }
 #stars .layer { position: absolute; left: 0; top: 0; width: calc(100% + 1024px); height: calc(100% + 1024px);
@@ -55,7 +55,7 @@ a { color: var(--accent); }
 #filters, #statsbar { transition: opacity .18s ease, visibility .18s; }
 body:has(#modal:not([hidden])) :is(#filters, #statsbar) { opacity: 0; visibility: hidden; }
 
-/* open/close animations (delete this block to remove them; the closing delay in app.js is then harmless) */
+/* open/close animations (delete this block to remove them; the closing delay in js/panels.js is then harmless) */
 /* Tournament list: slides in from the right */
 #area:not([hidden]) { transform-origin: top right; animation: area-in .22s cubic-bezier(.2, .8, .2, 1); }
 #area.closing { animation: area-out .18s ease-in forwards; pointer-events: none; } /* must stay after the rule above */
@@ -108,7 +108,7 @@ body:has(#modal:not([hidden])) :is(#filters, #statsbar) { opacity: 0; visibility
 @media (prefers-reduced-motion: reduce) { .row-art { transition: none; } }
 
 /* Tier strip: fixed-width, rounded bar on the left of each tournament in the list, inset 6px from the row's borders
-   (thresholds: TIERS in app.js). Grey is dark and silver light so they stay apart; platinum is League of Legends' teal. */
+   (thresholds: TIERS in js/list.js). Grey is dark and silver light so they stay apart; platinum is League of Legends' teal. */
 #area li button { --tier: #4b525b; }
 #area li button[data-tier="bronze"] { --tier: #cd7f32; }
 #area li button[data-tier="silver"] { --tier: #c5ccd6; }

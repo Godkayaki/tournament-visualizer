@@ -1,0 +1,14 @@
+{
+  "name": "edhglobe",
+  "private": true,
+  "description": "3D globe of past cEDH tournaments (data from TopDeck.gg, art from Scryfall)",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": "github:Godkayaki/tournament-visualizer",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "fetch": "node scripts/fetch-data.mjs",
+    "check-recent": "node scripts/check-recent.mjs",
+    "bump": "node scripts/bump-version.mjs",
+    "start": "npx serve site"
+  }
+}

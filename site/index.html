@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap">
-  <link rel="stylesheet" href="style.css">
-  <script src="theme.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/theme.js"></script>
 </head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1"></script>
@@ -55,7 +55,7 @@
   <div id="statsbar">
     <span id="stats">Loading tournaments…</span>
     <button id="recent" type="button" aria-pressed="false" disabled>Recent</button>
-    <button id="featured" type="button" aria-pressed="false" hidden>Featured</button> <!-- shown by app.js only when featured.json has upcoming events -->
+    <button id="featured" type="button" aria-pressed="false" hidden>Featured</button> <!-- shown by js/list.js only when content/featured.json has upcoming events -->
   </div>
 
   <aside id="area" hidden>
@@ -129,6 +129,6 @@
   </div>
 
   <script src="https://unpkg.com/globe.gl@2"></script>
-  <script src="app.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
