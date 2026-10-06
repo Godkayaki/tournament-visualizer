@@ -3,7 +3,7 @@ name: Build and deploy
 on:
   push:
     branches: [main]
-    paths-ignore: ['**.md']
+    paths-ignore: ['**.md','site/privacy.html']
   schedule:
     - cron: "15 5 * * *"  # refresh data daily (5:15 AM)
   workflow_dispatch:
