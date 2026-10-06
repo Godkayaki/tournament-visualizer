@@ -99,7 +99,7 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Add +16 players filter.
 - Add color selector to change main color for another neon-like preset.
 - Fixed data fetching - This has taken more time than I thought it would take at first honestly
-- Add auto-updateable versioning (this will help track when things break). Format -> `v[YEAR].[MONTH].[NUMBER]`
+- Add auto-updateable versioning (this will help track when things break). Format -> `v[YEAR].[MONTH].[NUMBER]` 
 
 </details>
 
