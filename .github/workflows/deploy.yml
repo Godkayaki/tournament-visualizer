@@ -3,6 +3,7 @@ name: Build and deploy
 on:
   push:
     branches: [main]
+    paths-ignore: ['**.md']
   schedule:
     - cron: "15 5 * * *"  # refresh data daily (5:15 AM)
   workflow_dispatch:
@@ -37,7 +38,7 @@ jobs:
           git pull --rebase origin main
           node scripts/bump-version.mjs
           git add version-number
-          git commit -m "Bump version to $(cat version-number) [skip ci]"
+          git commit -m "Bump version to $(cat version-number)"
           git push
       - name: Restore cached tournament data
         uses: actions/cache@v4
