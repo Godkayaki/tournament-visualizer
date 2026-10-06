@@ -254,6 +254,7 @@ fetch('data/tournaments.json', { cache: 'no-cache' }) // always revalidate, so a
     console.groupEnd();
     tier = tierOf(world.pointOfView().altitude);
     render();
+    $('recent').disabled = !all.length;
   })
   .catch(() => ($('stats').textContent = 'Could not load tournament data. Run the fetch script first.'));
 
@@ -265,8 +266,10 @@ $('filters').addEventListener('click', (e) => {
   b.classList.add('on');
   b.setAttribute('aria-pressed', 'true');
   state[g.dataset.key] = +b.dataset.v;
-  closeArea();
+  const keepRecent = areaRecent && !$('area').hidden;
+  if (!keepRecent) closeArea();
   render();
+  if (keepRecent) showRecent(); // the recent list follows the players filter
 });
 
 // ---- Naming an area from its tournaments ----
@@ -345,7 +348,7 @@ function closePanel(el, ms = 180) {
   el._closeTimer = setTimeout(() => { el.hidden = true; el.classList.remove('closing'); }, ms);
 }
 const openArea = () => openPanel($('area'));
-const closeArea = () => { hidePeek(); closePanel($('area')); };
+const closeArea = () => { hidePeek(); closePanel($('area')); areaRecent = false; syncRecentBtn(); };
 const openModal = () => openPanel($('modal'));
 const closeModal = () => closePanel($('modal'));
 
@@ -355,10 +358,18 @@ const TIERS = [[250, 'diamond'], [100, 'platinum'], [50, 'gold'], [30, 'silver']
 const tierName = (players) => TIERS.find(([min]) => players >= min)[1];
 
 let areaItems = [];
+let areaRecent = false; // true while the list is the "Recent tournaments" one (not a bubble)
 
-function showArea(items) {
+// Highlights the "Recent tournaments" button while its list is open
+const syncRecentBtn = () => $('recent').setAttribute('aria-pressed', String(areaRecent));
+
+// opts.title / opts.sub override the default heading (location name + "N tournaments found")
+function showArea(items, opts = {}) {
   areaItems = items;
-  $('area-title').innerHTML = `${esc(areaName(items))}<small style="display:block;margin-top:2px;font-size:13px;font-weight:400;color:var(--dim)">${items.length} tournament${items.length > 1 ? 's' : ''} found</small>`;
+  areaRecent = !!opts.recent;
+  syncRecentBtn();
+  const sub = opts.sub ?? `${items.length} tournament${items.length > 1 ? 's' : ''} found`;
+  $('area-title').innerHTML = `${esc(opts.title ?? areaName(items))}<small style="display:block;margin-top:2px;font-size:13px;font-weight:400;color:var(--dim)">${esc(sub)}</small>`;
   $('order-by').value = 'date'; // every new list starts from the most recent...
   $('order-dir').value = 'desc'; // ...first
   syncDirLabels();
@@ -390,6 +401,20 @@ function renderList() {
   $('area-list').scrollTop = 0;
   preloadRows(0, 10);
 }
+// "Recent tournaments": the latest RECENT_COUNT tournaments anywhere on the globe. It follows the players filter
+// but ignores the period filter and the location; the list itself works exactly like a bubble's.
+const RECENT_COUNT = 20;
+function showRecent() {
+  const items = all.filter((t) => t.p >= state.minPlayers).sort((a, b) => b.d - a.d).slice(0, RECENT_COUNT);
+  if (!items.length) return;
+  const size = state.minPlayers ? `${state.minPlayers}+ players` : 'all sizes';
+  showArea(items, { recent: true, title: 'Recent tournaments', sub: `${items.length} most recent · ${size}` });
+}
+$('recent').addEventListener('click', () => {
+  if (areaRecent && !$('area').hidden && !$('area').classList.contains('closing')) closeArea(); // second click closes it
+  else showRecent();
+});
+
 $('order-by').addEventListener('change', () => { $('order-dir').value = 'desc'; syncDirLabels(); renderList(); }); // a new order always starts at Newest / Most
 $('order-dir').addEventListener('change', renderList);
 

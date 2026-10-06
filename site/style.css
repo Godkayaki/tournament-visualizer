@@ -28,10 +28,14 @@ a { color: var(--accent); }
   filter: hue-rotate(var(--logo-hue)) drop-shadow(0 0 5px rgba(var(--accent-rgb), .35)) drop-shadow(0 0 14px rgba(var(--accent-rgb), .25)); } /* soft neon glow, milder than the globe's */
 #title h1 { margin: 0; font-size: 22px; line-height: 30px; letter-spacing: .01em; }
 #title p { margin: 2px 0 0; font-size: 15px; line-height: 20px; color: var(--dim); }
-/* Tournament counter: centered under the filter bar */
-#stats { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); margin: 0; text-align: center;
-  white-space: nowrap; pointer-events: none; color: var(--dim); font-size: 17px; font-weight: 700;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
+/* Tournament counter + "Recent tournaments" button: centered under the filter bar */
+#statsbar { position: fixed; top: 66px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px;
+  white-space: nowrap; pointer-events: none; } /* only the button takes clicks */
+#stats { color: var(--dim); font-size: 17px; font-weight: 700; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
+#recent { pointer-events: auto; font: inherit; font-size: 13px; padding: 3px 12px; color: var(--accent); cursor: pointer;
+  border: 1px solid var(--accent); border-radius: 999px; background: rgba(13, 17, 23, .6); }
+#recent:hover:not(:disabled), #recent[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+#recent:disabled { opacity: .45; cursor: default; }
 
 #area { position: fixed; top: 16px; right: 16px; max-height: calc(100vh - 28px); /* bottom edge 12px from the screen bottom, like the footer: it fully covers the bottom-right info block */ width: min(380px, calc(100vw - 32px));
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 0 8px;
@@ -47,8 +51,8 @@ a { color: var(--accent); }
 
 /* While the tournament popup is open, the filter bar and counter fade out so the popup can use the whole screen
    without overlapping them (delete these two rules to keep them visible behind the dimming) */
-#filters, #stats { transition: opacity .18s ease, visibility .18s; }
-body:has(#modal:not([hidden])) :is(#filters, #stats) { opacity: 0; visibility: hidden; }
+#filters, #statsbar { transition: opacity .18s ease, visibility .18s; }
+body:has(#modal:not([hidden])) :is(#filters, #statsbar) { opacity: 0; visibility: hidden; }
 
 /* open/close animations (delete this block to remove them; the closing delay in app.js is then harmless) */
 /* Tournament list: slides in from the right */
@@ -220,7 +224,7 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
 @media (max-width: 1400px) {
   /* the title keeps its usual spot (top 16px, ends at 68px); the bar starts 16px below it */
   #filters { top: 84px; } /* ends at ~127px */
-  #stats { top: 134px; }
+  #statsbar { top: 134px; }
   #area { top: 136px; max-height: calc(100vh - 148px); }
 }
 
@@ -238,7 +242,8 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
   #filters .group { gap: 4px; }
   #filters .group + .group { margin-top: 6px; padding: 6px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   #filters button { flex: 1; padding: 6px 4px; }
-  #stats { top: 180px; font-size: 15px; }
+  #statsbar { top: 180px; }
+  #stats { font-size: 15px; }
   #meta { display: none; } /* bottom-right info block */
   #modal { padding: 16px; }
   /* tournament list: a bottom sheet above the footer, so the globe stays visible (tap it to close the list) */

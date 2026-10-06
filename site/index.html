@@ -51,7 +51,11 @@
     </div>
   </nav>
 
-  <p id="stats">Loading tournaments…</p>
+  <!-- Counter + "Recent tournaments" button, centered under the filter bar -->
+  <div id="statsbar">
+    <span id="stats">Loading tournaments…</span>
+    <button id="recent" type="button" aria-pressed="false" disabled>Recent tournaments</button>
+  </div>
 
   <aside id="area" hidden>
     <button class="close" data-close="area" aria-label="Close">×</button>
