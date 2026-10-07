@@ -1,10 +1,12 @@
 # [**EDHGlobe**](https://edhglobe.com/) ─ Tournament data visualizer for **cEDH**
 
 [![EDH Globe Status](https://img.shields.io/website?url=https%3A%2F%2Fedhglobe.com&label=EDH%20Globe&up_message=online&up_color=brightgreen&down_message=offline&down_color=red)](https://edhglobe.com)
+![Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2FGodkayaki%2Ftournament-visualizer%2Frefs%2Fheads%2Fmain%2Fversion-number&search=.*&label=Version%3A)
 [![Deploy](https://github.com/Godkayaki/tournament-visualizer/actions/workflows/deploy.yml/badge.svg)](https://github.com/Godkayaki/tournament-visualizer/actions/workflows/deploy.yml)
 ![Scryfall API status](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.scryfall.com%2Fsets&query=%24.object&label=Scryfall%20API%20Status&color=brightgreen&prefix=accesible%20%28&suffix=%29&headers%5BUser-Agent%5D=EDHGlobeApp%2F1.0)  
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js\&logoColor=white)](https://nodejs.org/)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://github.com/Godkayaki/tournament-visualizer/blob/main/LICENSE)
+
 
 **3D globe of past cEDH tournaments (data from [TopDeck.gg](https://topdeck.gg), images from [Scryfall](https://scryfall.com/)) that brings regional metagame share and data to the table.**
 
@@ -66,7 +68,6 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
-- Clean app.js. Also... it's time to clean up the code, I didn't expect for this to end up being so huge.
 - Fix scroll not resetting when entering on tournament.
 
 <details>
@@ -102,7 +103,7 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Add auto-updateable versioning (this will help track when things break). Format -> `v[YEAR].[MONTH].[NUMBER]` 
 - Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
 - Add a "featured tournaments", manually featuring a couple of relevant tournaments that might take place in the future (these should be added manually).
-- Clean code.
+- Clean app.js. Also... it's time to clean up the code, I didn't expect for this to end up being so huge.
 
 </details>
 
