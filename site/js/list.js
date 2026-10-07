@@ -33,7 +33,7 @@ export function showArea(items, opts = {}) {
   syncDirLabels();
   $('order').hidden = items.length < 2 || areaKind === 'featured'; // nothing to sort with a single tournament; featured events are always by date
   if (areaKind === 'featured') renderFeatured(); else renderList();
-  openPanel($('area'));
+  openPanel($('area'), $('area-list'));
 }
 
 // The direction dropdown says what it means for the chosen order: dates or player counts

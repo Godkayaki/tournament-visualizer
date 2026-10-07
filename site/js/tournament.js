@@ -15,8 +15,7 @@ export async function openTournament(t) {
   $('m-bracket').href = `https://topdeck.gg/bracket/${encodeURIComponent(t.id)}`;
   $('m-banner').style.removeProperty('--banner-art');
   $('m-list').innerHTML = '<li class="msg">Loading…</li>';
-  $('m-scroll').scrollTop = 0;
-  openPanel($('modal'));
+  openPanel($('modal'), $('m-scroll'));
   try {
     const [rows, art] = await Promise.all([getRows(t), loadArt()]);
     const imgs = (p) => p.c.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2); // front face only; partners: 2 arts side by side
