@@ -61,35 +61,13 @@ The first time `node scripts/fetch-data.mjs` is run it fetches data once, storin
  
 As a side note, I've also added a `check-recent.mjs` file that you can run to check the recent tournament status of the last 4-5 days, where you can check the number of players and the reason why it's included or not and if it will be added on the next `fetch-data.mjs` you run. You can also check the current cached data on `actions -> caches`.
  
-## Project structure
- 
-```
-.github/workflows/deploy.yml   Build + deploy (push, daily cron, manual)
-scripts/                       Build-time tools (Node 18+): fetch-data, build-meta, check-recent, bump-version
-site/                          Everything that gets published
-  index.html, 404.html, privacy.html
-  robots.txt, sitemap.xml      Search engines (add a <url> to the sitemap if you add a page)
-  css/                         style.css (globe page), privacy.css (privacy + 404)
-  js/                          ES modules, no build step. main.js wires the rest:
-    theme.js                   accent color (classic script in <head>, so there is no flash on load)
-    data.js · state.js · utils.js · filters.js · meta.js
-    globe.js · stars.js · geo.js           the 3D globe, starfield, borders and area names
-    list.js · preview.js · tournament.js   list panel, winner preview on hover, tournament popup
-    regional.js · regional-ui.js           Regional Metagame window: meta share maths and the window itself
-    panels.js · tools.js                   open/close animations, color picker
-  content/featured.json        Hand-edited upcoming tournaments (see below)
-  data/                        Generated at build time by fetch-data.mjs and build-meta.mjs (not in git)
-  static/                      Logo, icon and og-image.png (the 1200x630 card shown when the link is shared)
-version-number                 Bumped by the workflow on every code push
-```
- 
-### Regional Metagame
+## Regional Metagame
  
 The **Regional Metagame** button opens a window with the share of decks played per commander (partners count as one deck). Pick a region (the world, a continent or a country) and compare it with another one, or with nothing; the colors W U B R G and C (colorless) filter by exact color identity, and none selected shows every commander. Percentages are always a share of all the decks in the region, so a color filter only hides commanders.
  
 A tournament belongs to the country whose borders contain its coordinates (a point just offshore goes to the nearest country, within 50 km), and the continent comes from the same borders file. `scripts/build-meta.mjs` writes `data/meta.json` with the counts per tournament, plus each commander's color identity from Scryfall (cached in `data/colors.json`, so only new commanders are looked up). The browser adds up the tournaments that pass the filters, so the Players and Period choices work like on the globe. Players without a listed commander are left out of the percentages.
  
-### Featured tournaments
+## Featured tournaments
  
 `site/content/featured.json` is a list of upcoming events, shown under the **★ Featured** button. Past events disappear on their own and the button hides itself when none are left.
  
