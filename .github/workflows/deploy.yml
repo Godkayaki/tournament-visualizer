@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths-ignore: ['**.md','site/privacy.html']
   schedule:
-    - cron: "15 5 * * *"  # refresh data daily (5:15 AM)
+    - cron: "15 1 * * *"  # refresh data daily (1:15 AM)
   workflow_dispatch:
     inputs:
       full:
