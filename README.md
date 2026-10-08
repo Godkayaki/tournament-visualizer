@@ -9,13 +9,13 @@
 
 
 **3D globe of past cEDH tournaments (data from [TopDeck.gg](https://topdeck.gg), images from [Scryfall](https://scryfall.com/)) that brings regional metagame share and data to the table.**
-
+ 
 **How does it work?** -> `scripts/fetch-data.mjs` calls the [TopDeck API](https://topdeck.gg/docs/tournaments-v2) at **build time** and writes `site/data/tournaments.json` (index) and `site/data/t/<tid>.json` (standings per tournament).
-
+ 
 **Why?** -> Well, since I started playing cEDH I've always been surrounded by what seems to be a sentiment of "*my region is the best*" or "*my region has the worst meta*". And well, what best way to check meta diversity per region than just looking at the numbers, am I right?
-
+ 
 ## Features
-
+ 
 - It displays cEDH tournaments all around the globe, represented in a 3D world map that is rotatable.
 - You can also click on the bubbles where these tournaments happened, displaying a list with all the tournaments in that specific area, with the number of players. Clicking on a tournament will also display another view of all the players and their respective decks and scores during that tournament.
 - There are direct filters for the data being shown; these are:
@@ -27,11 +27,6 @@ const KEEP = [/\bc\s?edh/i, /bracket\s*5\b/i];
 const BLOCK = [/bracket\s*[1-4]\b/i,
   /b\s*[1-4]\b/i, 
   /budget/i, 
-  /casual/i, 
-  /precon/i, 
-  /pauper/i, 
-  /commander\sparty/i,
-  /infrefest/i,
 ];
 const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find((r) => r.test(name)) || null);
 ```
@@ -39,38 +34,89 @@ const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find(
 - The workflow runs on every push (*on push data does not get updated*) and daily at **05:00 AM UTC (12:00 AM EST)**, keeping cacheed data and updating the last month with newer data. This also applies for Scryfall art. I've also added a visual timestamp on the down-right corner that points the last time the data was updated.
 - Zero runtime dependencies + Cached data that improves loading speed.
 - Accent color picker.
+- **Regional metagame data with;**
+  - Direct comparison between countries, continents and the world
+  - Color filtering
+  - *(To-do)* Order by either conversion rate or most played
+  - *(To-do)* In-depth data for each commander 
+    - *(To-do)* (CR%, recent lists, Seat Win%, tendencies...)
+    - *(To-do)* Floor vs Ceiling data for each commander
 
 ## Run locally
-
+ 
 ```bash
 git clone https://github.com/Godkayaki/tournament-visualizer
 TOPDECK_API_KEY=your_key      # In windows; $env:TOPDECK_API_KEY=your_key
-node scripts/fetch-data.mjs   # Node 18+
-npx serve site                # Start local server
+npm run fetch                 # Node 18+ (same as: node scripts/fetch-data.mjs)
+npm run meta                  # Regional Metagame data (needs the fetch above; downloads country borders)
+npm start                     # Start local server (same as: npx serve site)
 ```
 - You can get your `TOPDECK_API_KEY` at [Topdeck Dev](https://topdeck.gg/developers).
 - Optional env vars: 
   - `START_DATE` (default `2023-01-01`)
   - `FORMAT` (default `EDH`).
-
 Usually accessible through `http://localhost:3000`
-
+ 
 The first time `node scripts/fetch-data.mjs` is run it fetches data once, storing it on `data/t/art.json` and `data/t/tournaments.json`. After that you don't need to run it again for testing purposes.
-
+ 
 As a side note, I've also added a `check-recent.mjs` file that you can run to check the recent tournament status of the last 4-5 days, where you can check the number of players and the reason why it's included or not and if it will be added on the next `fetch-data.mjs` you run. You can also check the current cached data on `actions -> caches`.
-
+ 
+## Project structure
+ 
+```
+.github/workflows/deploy.yml   Build + deploy (push, daily cron, manual)
+scripts/                       Build-time tools (Node 18+): fetch-data, build-meta, check-recent, bump-version
+site/                          Everything that gets published
+  index.html, 404.html, privacy.html
+  robots.txt, sitemap.xml      Search engines (add a <url> to the sitemap if you add a page)
+  css/                         style.css (globe page), privacy.css (privacy + 404)
+  js/                          ES modules, no build step. main.js wires the rest:
+    theme.js                   accent color (classic script in <head>, so there is no flash on load)
+    data.js · state.js · utils.js · filters.js · meta.js
+    globe.js · stars.js · geo.js           the 3D globe, starfield, borders and area names
+    list.js · preview.js · tournament.js   list panel, winner preview on hover, tournament popup
+    regional.js · regional-ui.js           Regional Metagame window: meta share maths and the window itself
+    panels.js · tools.js                   open/close animations, color picker
+  content/featured.json        Hand-edited upcoming tournaments (see below)
+  data/                        Generated at build time by fetch-data.mjs and build-meta.mjs (not in git)
+  static/                      Logo, icon and og-image.png (the 1200x630 card shown when the link is shared)
+version-number                 Bumped by the workflow on every code push
+```
+ 
+### Regional Metagame
+ 
+The **Regional Metagame** button opens a window with the share of decks played per commander (partners count as one deck). Pick a region (the world, a continent or a country) and compare it with another one, or with nothing; the colors W U B R G and C (colorless) filter by exact color identity, and none selected shows every commander. Percentages are always a share of all the decks in the region, so a color filter only hides commanders.
+ 
+A tournament belongs to the country whose borders contain its coordinates (a point just offshore goes to the nearest country, within 50 km), and the continent comes from the same borders file. `scripts/build-meta.mjs` writes `data/meta.json` with the counts per tournament, plus each commander's color identity from Scryfall (cached in `data/colors.json`, so only new commanders are looked up). The browser adds up the tournaments that pass the filters, so the Players and Period choices work like on the globe. Players without a listed commander are left out of the percentages.
+ 
+### Featured tournaments
+ 
+`site/content/featured.json` is a list of upcoming events, shown under the **★ Featured** button. Past events disappear on their own and the button hides itself when none are left.
+ 
+```json
+[
+  { 
+  "name": "Example Open", 
+  "location": "Barcelona, Spain", 
+  "date": "2026-12-12", 
+  "url": "https://topdeck.gg/...", 
+  "price": "€35" 
+  }
+]
+```
+ 
 ## To-do list
-
+ 
 - Tournaments without coordinates (online events) are skipped right now. My idea is to have a separate list that is somehow accessible (thinking about adding the moon and be clickable lol).
-- Based on this I want to add local/regional meta information of what is being played where. This was the original idea, but I needed the rest of the page first. This might be a bit hard to do still, since I've noticed localization issues for the same location, like, for example, calling *Catalunya*, *Catalonia*. These are the same exact location but with different names.
+- (doing) Based on this I want to add local/regional meta information of what is being played where. This was the original idea, but I needed the rest of the page first. This might be a bit hard to do still, since I've noticed localization issues for the same location, like, for example, calling *Catalunya*, *Catalonia*. These are the same exact location but with different names.
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
   - **Shuffleup** -> Still in beta, no API documentation visible, it looks complicated.
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
-- Fix scroll not resetting when entering on tournament.
 
 <details>
+
 <summary>★ Extra ★</summary>
 
 - Set I'd like to add some sort of way to manual review all data, but that seems like a later-me-problem.
@@ -101,13 +147,12 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 - Add color selector to change main color for another neon-like preset.
 - Fixed data fetching - This has taken more time than I thought it would take at first honestly
 - Add auto-updateable versioning (this will help track when things break). Format -> `v[YEAR].[MONTH].[NUMBER]` 
-- Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
 - Add a "featured tournaments", manually featuring a couple of relevant tournaments that might take place in the future (these should be added manually).
-- Clean app.js. Also... it's time to clean up the code, I didn't expect for this to end up being so huge.
+- Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
 
 </details>
 
 # 
-
+ 
 ### **<p align="center"> [EDHGlobe.com](https://edhglobe.com/) </p>**
 <p align="center"> <img src="site/static/logo.svg" width="180"> </p>

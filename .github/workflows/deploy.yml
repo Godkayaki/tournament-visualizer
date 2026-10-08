@@ -53,6 +53,10 @@ jobs:
           # code-only pushes reuse the cache; scheduled/manual runs fetch only the latest 30 days
           SKIP_IF_CACHED: ${{ github.event_name == 'push' && '1' || '' }}
           FULL: ${{ inputs.full && '1' || '' }}
+      - name: Build regional metagame data
+        run: node scripts/build-meta.mjs
+        env:
+          FULL: ${{ inputs.full && '1' || '' }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

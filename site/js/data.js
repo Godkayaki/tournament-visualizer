@@ -9,6 +9,12 @@ export const loadTournaments = () =>
 let artPromise;
 export const loadArt = () => (artPromise ??= fetch('data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 
+// Regional metagame counts (built by scripts/build-meta.mjs). Fetched the first time the window opens; a failure can be retried.
+let metaPromise;
+export const loadMeta = () => (metaPromise ??= fetch('data/meta.json')
+  .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+  .catch((err) => { metaPromise = null; throw err; }));
+
 // Standings load lazily on hover and are cached, so opening the leaderboard afterwards is instant too.
 const rowsCache = new Map();
 export function getRows(t) {

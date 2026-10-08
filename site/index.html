@@ -41,6 +41,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin> <!-- country borders -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/regional.css">
   <script src="js/theme.js"></script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1"></script>
@@ -66,6 +67,8 @@
       <p>Drag to rotate, scroll to zoom.</p>
     </div>
   </header>
+  <!-- Under the logo; below 1400px the filter bar needs that space, so the copy inside #statsbar takes over (css/regional.css) -->
+  <button id="regional" class="regional-open" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Regional Metagame</button>
 
   <nav id="filters" aria-label="Filters">
     <div class="group" data-key="minPlayers">
@@ -90,7 +93,8 @@
   <div id="statsbar">
     <span id="stats">Loading tournaments…</span>
     <button id="recent" type="button" aria-pressed="false" disabled>Recent</button>
-    <button id="featured" type="button" aria-pressed="false" hidden>Featured</button> <!-- shown by js/list.js only when content/featured.json has upcoming events -->
+    <button id="featured" type="button" aria-pressed="false" hidden>Featured</button>
+    <button id="regional-narrow" class="regional-open" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Regional Metagame</button> <!-- shown by js/list.js only when content/featured.json has upcoming events -->
   </div>
 
   <aside id="area" hidden>
@@ -128,6 +132,62 @@
         <a id="m-bracket" href="#" target="_blank" rel="noopener">View bracket</a>
       </header>
       <div class="scroll" id="m-scroll"><ol id="m-list"></ol></div>
+    </div>
+  </div>
+
+  <div id="rg-modal" hidden>
+    <div class="card rg-card" role="dialog" aria-modal="true" aria-labelledby="rg-title">
+      <button class="close" data-close="regional" aria-label="Close">×</button>
+      <header class="rg-head">
+        <h2 id="rg-title">Regional Metagame</h2>
+        <p id="rg-sub" class="rg-sub"></p>
+        <div class="rg-controls">
+          <div class="rg-pair">
+            <label>Region <select id="rg-region"></select></label>
+            <button id="rg-swap" type="button" aria-label="Swap region and comparison" title="Swap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14M15 4l4 4-4 4M19 16H5M9 12l-4 4 4 4"/></svg>
+            </button>
+            <label>Compare with <select id="rg-vs"></select></label>
+          </div>
+          <label>Players
+            <select id="rg-players">
+              <option value="0">All</option><option value="16">16+</option><option value="30">30+</option><option value="50">50+</option><option value="100">100+</option>
+            </select>
+          </label>
+          <label>Period
+            <select id="rg-months">
+              <option value="3">3 months</option><option value="6">6 months</option><option value="12">1 year</option><option value="24">2 years</option><option value="0">All time</option>
+            </select>
+          </label>
+        </div>
+        <div class="rg-colorbar" id="rg-colorbar">
+          <span class="rg-colorlabel">Colors</span>
+          <div class="rg-colors" id="rg-colors" role="group" aria-label="Filter by color identity">
+            <button type="button" data-c="W" aria-pressed="false" title="White">W</button>
+            <button type="button" data-c="U" aria-pressed="false" title="Blue">U</button>
+            <button type="button" data-c="B" aria-pressed="false" title="Black">B</button>
+            <button type="button" data-c="R" aria-pressed="false" title="Red">R</button>
+            <button type="button" data-c="G" aria-pressed="false" title="Green">G</button>
+            <button type="button" data-c="C" aria-pressed="false" title="Colorless">C</button>
+          </div>
+          <span class="rg-colortext" id="rg-colortext">All colors</span>
+          <button id="rg-colorclear" type="button" hidden>Clear</button>
+        </div>
+        <div class="rg-tools">
+          <div class="rg-seg" role="group" aria-label="Sort commanders">
+            <button id="rg-most" type="button" aria-pressed="true">Most played</button>
+            <button id="rg-diff" type="button" aria-pressed="false" hidden>Biggest differences</button>
+          </div>
+          <input id="rg-search" type="search" placeholder="Search commander" aria-label="Search commander" autocomplete="off">
+        </div>
+        <div class="rg-stats" id="rg-stats"></div>
+        <p class="rg-legend" id="rg-legend" hidden><i class="a"></i><span id="rg-legend-a"></span> <i class="w"></i><span id="rg-legend-b"></span></p>
+      </header>
+      <div class="scroll" id="rg-scroll">
+        <ol id="rg-list"></ol>
+        <button id="rg-more" type="button" hidden>Show more</button>
+        <p id="rg-note" class="rg-note"></p>
+      </div>
     </div>
   </div>
 

@@ -9,6 +9,7 @@ import { initStars } from './stars.js';
 import { initList, closeArea, onFiltersChanged, setFeatured } from './list.js';
 import { initPreview } from './preview.js';
 import { initTournament, closeModal } from './tournament.js';
+import { initRegional, closeRegional } from './regional-ui.js';
 import { initColorPicker } from './tools.js';
 
 loadArt(); // start the commander-art request right away; the list and the popup reuse it
@@ -17,6 +18,7 @@ initStars(world);
 initPreview();
 initList();
 initTournament();
+initRegional();
 initColorPicker();
 
 // Touch screens have no scroll wheel: say "pinch" in the hint under the title
@@ -60,8 +62,11 @@ $('filters').addEventListener('click', (e) => {
 // ---- Closing things ----
 document.addEventListener('click', (e) => {
   const c = e.target.closest('[data-close]');
-  if (c) { if (c.dataset.close === 'area') closeArea(); else closeModal(); }
-  else if (e.target === $('modal')) closeModal();
+  if (c) {
+    const what = c.dataset.close;
+    if (what === 'area') closeArea(); else if (what === 'regional') closeRegional(); else closeModal();
+  } else if (e.target === $('modal')) closeModal();
+  else if (e.target === $('rg-modal')) closeRegional();
 });
 
 // Clicking empty map or starry background closes the tournament list (but not after dragging the globe, and never when a bubble is clicked)

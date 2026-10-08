@@ -23,8 +23,11 @@ const BLOCK = [/bracket\s*[1-4]\b/i,
 ];
 export const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find((r) => r.test(name)) || null);
 
-// What the globe shows: the name filter already ran (state.all); this applies the players and period filters.
-export function visible() {
-  const cutoff = state.months ? Date.now() / 1000 - state.months * 30.44 * 86400 : 0;
-  return state.all.filter((t) => t.p >= state.minPlayers && t.d >= cutoff);
+// The name filter already ran (state.all); this applies a players and a period filter on top of it.
+export function pick(minPlayers, months) {
+  const cutoff = months ? Date.now() / 1000 - months * 30.44 * 86400 : 0;
+  return state.all.filter((t) => t.p >= minPlayers && t.d >= cutoff);
 }
+
+// What the globe shows: the filter bar's choices.
+export const visible = () => pick(state.minPlayers, state.months);
