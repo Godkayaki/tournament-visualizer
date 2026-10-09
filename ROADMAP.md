@@ -3,7 +3,16 @@
 ## To-do list
  
 - Tournaments without coordinates (online events) are skipped right now. My idea is to have a separate list that is somehow accessible (thinking about adding the moon and be clickable lol).
-- (doing) Based on this I want to add local/regional meta information of what is being played where. This was the original idea, but I needed the rest of the page first. This might be a bit hard to do still, since I've noticed localization issues for the same location, like, for example, calling *Catalunya*, *Catalonia*. These are the same exact location but with different names.
+- Regional metadata;
+    - ~~Based on this I want to add local/regional meta information of what is being played where. This was the original idea, but I needed the rest of the page first. This might be a bit hard to do still, since I've noticed localization issues for the same location, like, for example, calling *Catalunya*, *Catalonia*. These are the same exact location but with different names.~~
+    - Add in-depth info about single commanders (including region filters);
+        - CR%
+        - Spicy impactful cards
+        - Proficient pilots
+        - Recent tournaments
+        - Top16's vs Actual wins on top16
+        - Best region-performing for that deck
+        - Evolution over the time period selected?
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
   - **Shuffleup** -> Still in beta, no API documentation visible, it looks complicated.
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.

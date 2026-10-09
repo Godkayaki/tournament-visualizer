@@ -82,7 +82,8 @@ A tournament belongs to the country whose borders contain its coordinates (a poi
   }
 ]
 ```
-
+#
+Check the current ["Roadmap"](ROADMAP.md) (it's just really a way for me to track what is still to be done and what I've already done).
 # 
  
 ### **<p align="center"> [EDHGlobe.com](https://edhglobe.com/) </p>**
