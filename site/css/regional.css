@@ -42,21 +42,26 @@
 #rg-swap:hover { color: var(--accent); border-color: var(--accent); }
 #rg-swap svg { width: 16px; height: 16px; }
 
-/* Color filter: greyed out until picked, then the real mana color */
+/* Color filter: the symbols in static/ (W U B R G C .svg), greyed out until picked, then in full color */
 .rg-colorbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 10px; }
 .rg-colorbar[hidden] { display: none; }
 .rg-colorlabel { color: var(--dim); font-size: 13px; }
 .rg-colors { display: flex; gap: 8px; }
-.rg-colors button { width: 34px; height: 34px; padding: 0; border-radius: 50%; border: 2px solid #30363d; background: #1b212b; color: #6b7585;
-  font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s, border-color .15s, box-shadow .15s; }
-.rg-colors button:hover { color: #c9d3e8; border-color: #6b7585; }
-.rg-colors button[aria-pressed="true"] { background: var(--c-bg); color: var(--c-fg); border-color: var(--c-border); box-shadow: 0 0 12px var(--c-glow); }
-.rg-colors [data-c="W"] { --c-bg: #f8f4d4; --c-fg: #3a3519; --c-border: #fffbe6; --c-glow: rgba(255, 244, 190, .5); }
-.rg-colors [data-c="U"] { --c-bg: #1c7fc7; --c-fg: #fff; --c-border: #8cc7f0; --c-glow: rgba(70, 160, 230, .55); }
-.rg-colors [data-c="B"] { --c-bg: #2b1f2e; --c-fg: #e6dcee; --c-border: #b9a7c5; --c-glow: rgba(185, 167, 197, .4); }
-.rg-colors [data-c="R"] { --c-bg: #d3202a; --c-fg: #fff; --c-border: #ff8a8f; --c-glow: rgba(255, 80, 90, .5); }
-.rg-colors [data-c="G"] { --c-bg: #0f8a4f; --c-fg: #fff; --c-border: #6fe0a4; --c-glow: rgba(60, 210, 130, .5); }
-.rg-colors [data-c="C"] { --c-bg: #b8b3ae; --c-fg: #26221f; --c-border: #e8e4e0; --c-glow: rgba(220, 215, 210, .4); }
+.rg-colors button { width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; line-height: 0;
+  box-shadow: 0 0 0 2px #30363d; transition: box-shadow .15s; } /* the ring keeps dark symbols (black) visible when greyed out */
+.rg-colors img { display: block; width: 100%; height: 100%; pointer-events: none; filter: grayscale(1) brightness(.7); opacity: .7;
+  transition: filter .15s, opacity .15s; }
+.rg-colors button:hover { box-shadow: 0 0 0 2px #6b7585; }
+.rg-colors button:hover img { filter: grayscale(1) brightness(.95); opacity: .95; }
+.rg-colors button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--c-ring), 0 0 12px var(--c-glow); }
+.rg-colors button[aria-pressed="true"] img { filter: none; opacity: 1; }
+.rg-colors button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.rg-colors [data-c="W"] { --c-ring: #fffbe6; --c-glow: rgba(255, 244, 190, .5); }
+.rg-colors [data-c="U"] { --c-ring: #8cc7f0; --c-glow: rgba(70, 160, 230, .55); }
+.rg-colors [data-c="B"] { --c-ring: #b9a7c5; --c-glow: rgba(185, 167, 197, .4); }
+.rg-colors [data-c="R"] { --c-ring: #ff8a8f; --c-glow: rgba(255, 80, 90, .5); }
+.rg-colors [data-c="G"] { --c-ring: #6fe0a4; --c-glow: rgba(60, 210, 130, .5); }
+.rg-colors [data-c="C"] { --c-ring: #e8e4e0; --c-glow: rgba(220, 215, 210, .4); }
 .rg-colortext { color: var(--dim); font-size: 13px; }
 #rg-colorclear { padding: 3px 10px; font: inherit; font-size: 12px; color: var(--dim); cursor: pointer; background: transparent; border: 1px solid var(--line); border-radius: 999px; }
 #rg-colorclear:hover { color: var(--accent); border-color: var(--accent); }
