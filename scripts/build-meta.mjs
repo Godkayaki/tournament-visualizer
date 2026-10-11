@@ -1,5 +1,6 @@
 // Builds site/data/meta.json for the "Regional Metagame" window: for every tournament, how many decks of each
-// commander were played, in which country (and continent) it took place, and the color identity of every commander.
+// commander were played and how many of them made the top cut, in which country (and continent) it took place, and the
+// color identity of every commander.
 //
 //   node scripts/build-meta.mjs        (run it after scripts/fetch-data.mjs; it makes no TopDeck calls)
 //   Optional: FULL=1 rebuild even if the file is up to date, and look up unmatched commanders on Scryfall again
@@ -19,14 +20,18 @@
 //     countries:  [{ code, name, continent }, ...]   only countries that have tournaments
 //     commanders: [[name, ...], ...]             one entry per commander or partner pair (names sorted, so A/B = B/A)
 //     colors:     ["GU", "", null, ...]          color identity of each commander entry, in WUBRG order ("" = colorless, null = unknown)
-//     t: { <tournament id>: [countryIndex or -1, decksWithoutCommander, commanderIndex, decks, commanderIndex, decks, ...] }
+//     t: { <tournament id>: [countryIndex or -1, decksWithoutCommander, hasTopCut (1/0), commanderIndex, decks, topCutDecks, commanderIndex, decks, topCutDecks, ...] }
 //   }
+//
+// Conversion = decks that made the top cut / decks played, counting only tournaments that had a top cut (hasTopCut = 1). A deck
+// is in the top cut when its player is among the first `topCut` rows of the standings (kept in final-placement order by
+// fetch-data.mjs). In a tournament without a top cut every topCutDecks is 0 and the front-end leaves its decks out of the rate.
 
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
-const SCHEMA = 2; // bump when the layout or the counting rules change, so cached files get rebuilt
+const SCHEMA = 3; // bump when the layout or the counting rules change, so cached files get rebuilt
 const NEAREST_KM = 50;
 const SCRYFALL_URL = process.env.SCRYFALL_URL || 'https://api.scryfall.com';
 const SCRYFALL_HEADERS = { 'User-Agent': 'cedh-globe/1.0 (https://github.com/Godkayaki/tournament-visualizer)', Accept: 'application/json', 'Content-Type': 'application/json' };
@@ -157,20 +162,23 @@ const idOf = (names) => {
 };
 
 const t = {};
-let decks = 0, noCommander = 0, noStandings = 0;
+let decks = 0, noCommander = 0, noStandings = 0, withCut = 0, cutDecks = 0;
 const unplaced = [];
 for (const tour of index.tournaments) {
   let rows;
   try { rows = JSON.parse(await readFile(`${OUT}t/${tour.f}.json`, 'utf8')); }
   catch { noStandings++; continue; }
 
-  const counts = new Map();
+  const counts = new Map(); // commander id -> [decks, top cut decks]
+  const cutSize = tour.tc > 0 ? tour.tc : 0;
   let unknown = 0;
-  for (const p of rows) {
+  for (const [place, p] of rows.entries()) {
     const names = [...new Set((p.c || []).map((s) => String(s).trim()).filter(Boolean))].sort(); // sorted: A/B and B/A are the same deck
     if (!names.length) { unknown++; continue; }
     const id = idOf(names);
-    counts.set(id, (counts.get(id) || 0) + 1);
+    const c = counts.get(id) || counts.set(id, [0, 0]).get(id);
+    c[0]++;
+    if (place < cutSize) { c[1]++; cutDecks++; }
     decks++;
   }
   noCommander += unknown;
@@ -182,8 +190,9 @@ for (const tour of index.tournaments) {
     k = countryIdx.get(f);
   } else if (features) unplaced.push(`${tour.n} (${tour.lat.toFixed(2)}, ${tour.lng.toFixed(2)})`);
 
-  const entry = [k, unknown];
-  for (const [id, n] of [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])) entry.push(id, n);
+  if (cutSize) withCut++;
+  const entry = [k, unknown, cutSize ? 1 : 0];
+  for (const [id, [n, cut]] of [...counts].sort((a, b) => b[1][0] - a[1][0] || a[0] - b[0])) entry.push(id, n, cut);
   t[tour.id] = entry;
 }
 
@@ -235,6 +244,7 @@ await writeFile(OUT + 'meta.json', JSON.stringify(meta));
 
 const tournaments = Object.keys(t).length;
 console.log(`Wrote meta.json: ${tournaments} tournaments, ${decks} decks, ${commanders.length} commanders, ${countries.length} countries`);
+console.log(`${withCut} of ${tournaments} tournaments have a top cut (${cutDecks} decks in it)`);
 console.log(`${colors.filter((c) => c === null).length} commanders without color identity${colorsFailed ? ` (${colorsFailed} lookups failed, will retry)` : ''}`);
 console.log(`${noCommander} players without a listed commander, ${noStandings} tournaments without standings, ${unplaced.length} not placed in a country`);
 if (unplaced.length) { console.log('Not placed (first 10):'); unplaced.slice(0, 10).forEach((l) => console.log(`  ${l}`)); }
@@ -244,6 +254,7 @@ await summary([
   `| Tournaments / decks | ${tournaments} / ${decks} |`,
   `| Commanders (and partner pairs) | ${commanders.length} |`,
   `| Countries | ${countries.length} |`,
+  `| Tournaments with a top cut / decks in it | ${withCut} / ${cutDecks} |`,
   `| Commanders without color data | ${colors.filter((c) => c === null).length} |`,
   `| Not placed in a country | ${unplaced.length} |`,
   `| Players without a listed commander | ${noCommander} |`,

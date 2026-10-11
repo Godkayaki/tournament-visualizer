@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en" class="doc">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Daniel Gonzalez">
+  <title>EDHGlobe | How the numbers are calculated</title>
+  <link rel="icon" href="static/logo.ico" sizes="any">
+  <link rel="apple-touch-icon" type="image/png" sizes="167x167" href="static/logo-167x167.png"> 
+  <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="static/logo-180x180.png">
+  <link rel="canonical" href="https://edhglobe.com/methodology">
+  <meta name="description" content="How EDHGlobe calculates the Regional Metagame: meta share, conversion rate, regions, colors and comparisons, and why the numbers can differ from other sites.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="EDHGlobe">
+  <meta property="og:title" content="EDHGlobe | How the numbers are calculated">
+  <meta property="og:description" content="How EDHGlobe calculates the Regional Metagame: meta share, conversion rate, regions, colors and comparisons, and why the numbers can differ from other sites.">
+  <meta property="og:url" content="https://edhglobe.com/methodology">
+  <meta property="og:image" content="https://edhglobe.com/static/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/privacy.css">
+  <script src="js/theme.js"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-3VG8KXHHG1');
+  </script>
+</head>
+<body>
+  <!-- Same id as the globe page's title block, so it reuses its logo, glow and text styles (see privacy.css) -->
+  <header id="title">
+    <a class="brand" href="./" aria-label="EDHGlobe: back to the globe">
+      <img src="static/logo.svg" alt="">
+      <div>
+        <h1>EDHGlobe</h1>
+        <!-- <p>cEDH Tournament data visualizer</p> -->
+      </div>
+    </a>
+  </header>
+
+  <main class="policy">
+    <h2>How the numbers are calculated</h2>
+    <p class="updated">Last updated: October 11, 2026</p>
+
+    <div class="summary">
+      <p><strong>TLDR:</strong> every figure in the <em>Regional Metagame</em> window is counted from the public results of the tournaments on TopDeck.gg that EDHGlobe shows on the globe. <b>Meta share</b> is the percentage of decks (with a listed commander, from commanders that pass the <em>Min. entries</em> filter) that played a given commander, and <b>conversion</b> is the percentage of those decks that made the top cut, only counting tournaments that had one. Nothing is estimated or predicted, and nothing is added by hand.</p>
+    </div>
+
+    <h3>Where the data comes from</h3>
+    <ul>
+      <li><strong>Tournaments and standings</strong> come from the <a href="https://topdeck.gg" target="_blank" rel="noopener">TopDeck.gg</a> API: name, date, location, number of players, size of the top cut, and for each player the final standing and the commander(s) listed in their decklist.</li>
+      <li><strong>Card art and color identity</strong> come from <a href="https://scryfall.com/" target="_blank" rel="noopener">Scryfall</a>.</li>
+      <li><strong>Country borders</strong> come from the open <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a> dataset.</li>
+      <li>The data is refreshed <b>daily at 05:00 AM UTC</b>. The exact time of the last update is shown in the footer of the globe page. This is heavily dictated by when Github Actions decides to run the fetch-data script, which heavily delayed.</li>
+    </ul>
+
+    <h3>Which tournaments are counted</h3>
+    <p>The Regional Metagame uses exactly the tournaments that pass the filters of the window, which start from the ones you picked on the globe:</p>
+    <ul>
+      <li><strong>cEDH only.</strong> TopDeck has no field that says whether an event is cEDH, so EDHGlobe hides tournaments by name: names mentioning things like Casual, Budget, Precon, Pauper or Bracket 1&ndash;4 are left out, unless the name also says cEDH or Bracket 5. This is a best effort and an event can occasionally be wrongly kept or hidden.</li>
+      <li><strong>Number of players</strong> (all, 30+, 50+, 100+): tournaments below the chosen size are ignored.</li>
+      <li><strong>Period</strong> (for example the last 6 months): counted back from today, with every month taken as 30.44 days.</li>
+      <li>Tournaments for which TopDeck has no standings yet are skipped.</li>
+      <li><strong>Min. entries</strong> (All, 20, 60, 120) isn't about tournaments but about commanders, so it is explained below.</li>
+    </ul>
+
+    <h3>Decks and commanders</h3>
+    <ul>
+      <li>Every player in the standings counts as <strong>one deck</strong>, represented by the commander(s) in their decklist.</li>
+      <li><strong>Partners count as one deck.</strong> A pair such as <em>Kraum + Tymna</em> is a single entry, and the order of the names doesn't matter. A commander played alone and the same commander paired with a partner are different entries.</li>
+      <li><strong>Players without a listed commander</strong> (no decklist, or one TopDeck could not read) can't be assigned to any deck. They are not counted in any percentage, and the window tells you how many there were. In practice this is a large part of all players, so keep it in mind when reading the shares.</li>
+      <li>A commander is identified by its name, so a spelling variant in the decklist can show up as a separate entry.</li>
+    </ul>
+
+    <h3>Min. entries</h3>
+    <p>This filter hides the commanders that were played fewer times than the chosen number (All, 20, 60 or 120) in the selected period and size, which helps leave out rarely played or casual decks that show up at cEDH tournaments. It starts at <b>20</b> every time the window is opened, and <b>All</b> turns it off.</p>
+    <ul>
+      <li>The count is made over the <strong>whole world</strong>, not inside the selected region. A commander with 20 or more decks worldwide stays in every region, even where it was played once, and one with fewer than 20 is hidden everywhere. This way a region and the one it is compared with always use the same list of commanders.</li>
+      <li>The percentages are <strong>recalculated</strong> with what is left: the decks of the hidden commanders are removed from the total, so meta share, the average conversion and the deck counts in the window only describe the commanders that pass the filter. The window says how many decks were left out.</li>
+      <li>A commander's own conversion rate doesn't change, because it only depends on its own decks.</li>
+    </ul>
+
+    <h3>Meta share</h3>
+    <p>The meta share of a commander in a region is:</p>
+    <p><code>decks of that commander &divide; all decks with a listed commander that pass the Min. entries filter</code>, both counted in that region.</p>
+    <ul>
+      <li>The color filter only <em>hides</em> commanders. Percentages are always a share of all the decks in the region, never of the selected colors only, so they don't change when you filter.</li>
+      <li>The commanders are sorted by decks played by default, and every commander is listed, with no &ldquo;Other&rdquo; group.</li>
+    </ul>
+
+    <h3>Conversion rate</h3>
+    <p>The conversion rate of a commander is:</p>
+    <p><code>decks that made the top cut &divide; decks played</code>, only counting tournaments that had a top cut.</p>
+    <ul>
+      <li>A deck made the top cut when its player finished within the first N places of the standings, N being the size of the top cut that TopDeck reports for that tournament.</li>
+      <li><strong>Tournaments without a top cut are left out</strong> of both sides of the division. Those events, usually small ones, can't tell us anything about conversion, so counting their decks as &ldquo;not converted&rdquo; would lower every rate for something that isn't the deck's fault. The row shows the exact figures, for example &ldquo;31 of 118&rdquo;.</li>
+      <li>The average conversion in the window's header is the same calculation over every deck of the region.</li>
+      <li><strong>Small samples.</strong> With few decks the rate says little (1 top cut in 2 decks isn't 50%). Commanders with fewer than 10 decks in tournaments with a top cut are marked <em>small sample</em>, shown dimmed, and listed after all the others when sorting by conversion.</li>
+    </ul>
+
+    <h3>Regions</h3>
+    <ul>
+      <li>A tournament belongs to the <strong>country</strong> whose borders contain the location TopDeck lists for it. It is the location of the event, not where the players live. If the point falls just outside every border (a coast, a small island), it is assigned to the nearest country if that is within 50 km.</li>
+      <li>Tournaments that can't be placed in a country count for <strong>World</strong> only.</li>
+      <li>Each country belongs to a <strong>continent</strong>, according to the same borders dataset. Nothing is merged below that: Catalonia is part of Spain, for example, and regions inside a country aren't separated.</li>
+    </ul>
+
+    <h3>Comparing regions</h3>
+    <ul>
+      <li>When you compare a region with another one (or with the world), each row also shows the other region's meta share and conversion for the same commander.</li>
+      <li>The difference is given in <strong>pp</strong>, <em>percentage points</em>: the plain subtraction of the two percentages. 7.1% against 5.1% is +2.0 pp, not +40%.</li>
+      <li><strong>Biggest differences</strong> sorts by the size of that gap, including commanders that only one of the regions plays. To keep one lucky deck from topping the list, commanders with fewer than 3 decks (counting the decks the other region's share would predict) are left out.</li>
+    </ul>
+
+    <h3>Why the numbers can differ from other sites</h3>
+    <p>If you compare EDHGlobe with a site such as <a href="https://edhtop16.com" target="_blank" rel="noopener">edhtop16</a>, the numbers can legitimately differ even when both read the same TopDeck data. The usual reasons are:</p>
+    <ul>
+      <li><strong>Meta share tends to be higher here.</strong> We divide by the decks that have a listed commander only, and many players have none. On top of that, the Min. entries filter removes the rarest commanders from the total, which makes the others' shares grow. A site that divides by every entry will show lower percentages for the very same decks.</li>
+      <li><strong>Conversion tends to be higher here.</strong> We ignore tournaments without a top cut. A site that counts every entry as &ldquo;played&rdquo;, even in events with no top cut, will show lower rates.</li>
+      <li><strong>Different sets of tournaments.</strong> Each site decides what counts as a cEDH event, which sizes and which dates are included, and how long a &ldquo;month&rdquo; is. Our name filter hides some events that another site may keep, and the reverse.</li>
+      <li><strong>Different update times.</strong> A site that updates more often will already include tournaments we'll only add on our next daily refresh.</li>
+      <li><strong>Different grouping.</strong> Partner pairs, spelling variants and double-faced cards can be grouped differently, and some sites list a pair under each of its commanders.</li>
+      <li><strong>Small samples.</strong> Percentages from a handful of decks move a lot with one result, in any site.</li>
+    </ul>
+    <p>Because of this, compare trends and rankings across sites rather than exact percentages, and make sure the same period, size and definitions are used on both.</p>
+
+    <h3>Limits to keep in mind</h3>
+    <ul>
+      <li>The results reflect what players and tournament organizers entered on TopDeck. Missing or wrong decklists, or a mislabeled event, end up in the numbers.</li>
+      <li>A region with few tournaments gives noisy results, and one big event can dominate a country.</li>
+      <li>Top cut size and standings are taken as TopDeck reports them. We don't have the results of the cut itself, only who got into it.</li>
+    </ul>
+
+    <h3>Found something that looks wrong?</h3>
+    <p>Tell us on <a href="https://discord.com/users/212661657980108802" target="_blank" rel="noopener">Discord</a> or open an issue on <a href="https://github.com/Godkayaki/tournament-visualizer/issues" target="_blank" rel="noopener">GitHub</a>. The counting code is public: <code>scripts/build-meta.mjs</code> builds the data and <code>site/js/regional.js</code> does the maths.</p>
+  </main>
+
+  <footer>
+    <div><b>© 2026 EDHGlobe</b> ─ Licensed under <a href="https://github.com/Godkayaki/tournament-visualizer?tab=GPL-3.0-1-ov-file" target="_blank" rel="noopener">GPL-3.0</a></div>
+    <div>Data provided by <a href="https://topdeck.gg" target="_blank" rel="noopener">TopDeck.gg</a> ─ Art provided by <a href="https://scryfall.com/" target="_blank" rel="noopener">Scryfall</a></div>
+    <div>
+      <a href="https://github.com/Godkayaki/tournament-visualizer" target="_blank" rel="noopener">Source code</a>
+      ─ Contact:
+      <a href="https://moxfield.com/users/DrG" target="_blank" rel="noopener">Moxfield</a> ─
+      <a href="https://discord.com/users/212661657980108802" target="_blank" rel="noopener">Discord</a>
+    </div>
+    <div>Support me on <a href="https://ko-fi.com/kayaki" target="_blank" rel="noopener">Ko-Fi</a></div>
+    <div>Check out our <a href="privacy">Privacy Policy</a></div>
+  </footer>
+</body>
+</html>

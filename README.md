@@ -47,7 +47,7 @@ const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find(
 ```bash
 git clone https://github.com/Godkayaki/tournament-visualizer
 TOPDECK_API_KEY=your_key      # In windows; $env:TOPDECK_API_KEY=your_key
-npm run fetch                 # Node 18+ (same as: node scripts/fetch-data.mjs)
+npm run fetch                 # Node 18+
 npm run meta                  # Regional Metagame data (needs the fetch above; downloads country borders)
 npm start                     # Start local server (same as: npx serve site)
 ```

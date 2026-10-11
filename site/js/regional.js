@@ -5,6 +5,11 @@
 // predict for this region too, so one lucky deck in a small region can't top the list.
 export const MIN_EVIDENCE = 3;
 
+// Conversion (decks that made the top cut / decks played) is only a fair ranking with enough decks behind it: a commander
+// with 2 decks and 1 top cut is not "50%". Below this many decks (in tournaments that had a top cut) a commander is still
+// listed, but after all the others when sorting by conversion.
+export const MIN_CONV_DECKS = 10;
+
 export const CONTINENTS = ['Africa', 'Antarctica', 'Asia', 'Europe', 'North America', 'Oceania', 'South America'];
 
 // ---- Regions. A region is named by a key: 'world', 'cont:Europe' or 'country:12' (position in meta.countries) ----
@@ -16,11 +21,14 @@ export function regionExists(meta, key) {
 }
 export const regionLabel = (meta, key) => (key === 'world' ? 'World' : key.startsWith('cont:') ? key.slice(5) : meta.countries[+key.slice(8)].name);
 
-const newScope = () => ({ tournaments: 0, unknown: 0, decks: 0, counts: new Map() });
+// counts: commander -> decks. cuts: commander -> decks that made the top cut. eligible: commander -> decks played in tournaments
+// that HAD a top cut (the denominator of the conversion rate). eligibleDecks / cutDecks are the same sums for the whole scope.
+const newScope = () => ({ hiddenDecks: 0, tournaments: 0, cutTournaments: 0, unknown: 0, decks: 0, eligibleDecks: 0, cutDecks: 0, counts: new Map(), cuts: new Map(), eligible: new Map() });
+const bump = (map, key, n) => { if (n) map.set(key, (map.get(key) || 0) + n); };
 
 // Adds up the given tournaments: one scope for the whole world, one per continent and one per country
 // (same order as meta.countries). A scope's `decks` counts players with a listed commander; `unknown` counts the others.
-export function tally(meta, tournaments) {
+export function tally(meta, tournaments, minEntries = 0) {
   const world = newScope();
   const countries = meta.countries.map(newScope);
   const continents = new Map(CONTINENTS.map((c) => [c, newScope()]));
@@ -34,12 +42,34 @@ export function tally(meta, tournaments) {
       const continent = continents.get(meta.countries[row[0]].continent);
       if (continent) scopes.push(continent);
     } else unplaced++;
-    for (const s of scopes) { s.tournaments++; s.unknown += row[1]; }
-    for (let i = 2; i < row.length; i += 2) {
-      for (const s of scopes) { s.counts.set(row[i], (s.counts.get(row[i]) || 0) + row[i + 1]); s.decks += row[i + 1]; }
+    const hasCut = row[2] === 1;
+    for (const s of scopes) { s.tournaments++; s.unknown += row[1]; if (hasCut) s.cutTournaments++; }
+    for (let i = 3; i < row.length; i += 3) {
+      const [id, n, cut] = [row[i], row[i + 1], row[i + 2]];
+      for (const s of scopes) {
+        bump(s.counts, id, n); s.decks += n;
+        bump(s.cuts, id, cut); s.cutDecks += cut;
+        if (hasCut) { bump(s.eligible, id, n); s.eligibleDecks += n; }
+      }
     }
   }
-  return { world, countries, continents, unplaced };
+  const result = { world, countries, continents, unplaced };
+  if (minEntries > 0) restrictAll(result, minEntries);
+  return result;
+}
+
+// "Min. entries": commanders with fewer decks than `minEntries` in the WORLD (same tournaments) are dropped from every region, so
+// casual or very rarely played decks don't count, and a compared pair of regions always has the same set of commanders to work
+// with. Shares and conversion are then recalculated over the commanders that are left (decks, eligibleDecks, cutDecks).
+function restrictAll(result, minEntries) {
+  const allowed = new Set([...result.world.counts].filter(([, n]) => n >= minEntries).map(([id]) => id));
+  const sum = (map) => { let t = 0; for (const n of map.values()) t += n; return t; };
+  for (const s of [result.world, ...result.countries, ...result.continents.values()]) {
+    const before = s.decks;
+    for (const map of [s.counts, s.cuts, s.eligible]) for (const id of [...map.keys()]) if (!allowed.has(id)) map.delete(id);
+    s.decks = sum(s.counts); s.eligibleDecks = sum(s.eligible); s.cutDecks = sum(s.cuts);
+    s.hiddenDecks = before - s.decks;
+  }
 }
 
 export const scopeFor = (counts, key) =>
@@ -75,9 +105,19 @@ export function colorTotals(meta, scope, colorKey) {
 // ---- Ranking ----
 const share = (scope, id) => (scope.decks ? ((scope.counts.get(id) || 0) / scope.decks) * 100 : 0); // % of ALL decks of the scope
 
+// Conversion rate of a commander (or of the whole scope when `id` is null), as a percentage; null when it has no decks in
+// tournaments with a top cut.
+const conversion = (scope, id) => {
+  const elig = id === null ? scope.eligibleDecks : scope.eligible.get(id) || 0;
+  const cut = id === null ? scope.cutDecks : scope.cuts.get(id) || 0;
+  return elig ? (cut / elig) * 100 : null;
+};
+export const fieldConversion = (scope) => conversion(scope, null);
+
 // Every commander of `scope`, ranked. `baseline` (a scope, or null) adds the baseline's share and the gap in percentage points.
 // A color filter only hides commanders: the percentages stay a share of all the scope's decks.
 //   sort 'most': by decks played in the scope (all of them, no grouping)
+//   sort 'conv': by conversion rate; commanders with fewer than MIN_CONV_DECKS decks to measure it come last (row.thin)
 //   sort 'diff': by the size of the gap to the baseline, including commanders the scope doesn't play at all
 export function rank(meta, scope, baseline, sort, colorKey = null) {
   const byDiff = sort === 'diff' && !!baseline;
@@ -90,11 +130,19 @@ export function rank(meta, scope, baseline, sort, colorKey = null) {
     const basePct = baseline ? share(baseline, id) : null;
     if (byDiff && Math.max(n, (basePct / 100) * scope.decks) < MIN_EVIDENCE) continue;
     const names = meta.commanders[id];
-    rows.push({ id, names, name: names.join(' / '), n, pct, basePct, diff: baseline ? pct - basePct : null });
+    const elig = scope.eligible.get(id) || 0;
+    const conv = conversion(scope, id);
+    const baseConv = baseline ? conversion(baseline, id) : null;
+    rows.push({
+      id, names, name: names.join(' / '), n, pct, basePct, diff: baseline ? pct - basePct : null,
+      cut: scope.cuts.get(id) || 0, elig, conv, thin: elig < MIN_CONV_DECKS,
+      baseConv, convDiff: conv !== null && baseConv !== null ? conv - baseConv : null,
+    });
   }
-  rows.sort(byDiff
-    ? (a, b) => Math.abs(b.diff) - Math.abs(a.diff) || a.name.localeCompare(b.name)
-    : (a, b) => b.n - a.n || a.name.localeCompare(b.name));
+  const byName = (a, b) => a.name.localeCompare(b.name);
+  rows.sort(byDiff ? (a, b) => Math.abs(b.diff) - Math.abs(a.diff) || byName(a, b)
+    : sort === 'conv' ? (a, b) => a.thin - b.thin || (b.conv ?? -1) - (a.conv ?? -1) || b.n - a.n || byName(a, b)
+    : (a, b) => b.n - a.n || byName(a, b));
   rows.forEach((r, i) => { r.rank = i + 1; });
   return rows;
 }

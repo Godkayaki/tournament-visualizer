@@ -5,13 +5,14 @@ import { state } from './state.js';
 import { pick } from './filters.js';
 import { loadMeta, loadArt } from './data.js';
 import { openPanel, closePanel } from './panels.js';
-import { tally, rank, scopeFor, regionExists, regionLabel, CONTINENTS, colorFilter, colorName, colorTotals } from './regional.js';
+import { tally, rank, scopeFor, regionExists, regionLabel, CONTINENTS, colorFilter, colorName, colorTotals, fieldConversion, MIN_CONV_DECKS } from './regional.js';
 
 const PAGE = 20; // rows added by each "Show more"
 
 // What the window shows. Players and period start from the filter bar every time it opens; the rest is remembered.
 // region / vs are region keys (see regional.js); vs can also be 'none'.
-const view = { region: 'world', vs: 'world', players: 30, months: 6, sort: 'most', colors: new Set(), query: '' };
+// sort is 'most' (most played), 'conv' (conversion rate) or 'diff' (biggest differences, only while comparing).
+const view = { region: 'world', vs: 'world', players: 30, months: 6, minEntries: 20, sort: 'most', colors: new Set(), query: '' };
 let meta = null;       // data/meta.json
 let art = {};          // commander -> art URLs
 let counts = null;     // tally() of the tournaments that pass view.players / view.months
@@ -24,11 +25,21 @@ let baseName = '';     // label of the comparison, for the rows
 export const closeRegional = () => closePanel($('rg-modal'));
 
 const fmtPct = (v) => (v >= 0.1 ? `${v.toFixed(1)}%` : v > 0 ? '<0.1%' : '0%');
+const DEFAULT_MIN_ENTRIES = 20; // keep in step with the selected <option> of #rg-entries in index.html
+const PP_TIP = 'pp = percentage points: the plain difference between the two percentages';
 const fmtDiff = (d) => (Math.abs(d) < 0.05 ? '±0.0 pp' : `${d > 0 ? '+' : '\u2212'}${Math.abs(d).toFixed(1)} pp`);
 const plural = (n, one, many = `${one}s`) => `${n.toLocaleString()} ${n === 1 ? one : many}`;
 const sentence = (key) => (key === 'world' ? 'the world' : regionLabel(meta, key)); // "...compared with the world"
 
 const baselineScope = () => (view.vs === 'none' || view.vs === view.region ? null : scopeFor(counts, view.vs));
+
+// Conversion: how many of the commander's decks made the top cut. Dimmed when there are too few decks to say much.
+function convHtml(r) {
+  if (r.conv === null) return '<span class="rg-conv none" title="No tournament with a top cut"><i>Conversion</i><b>–</b><small>no top cut data</small></span>';
+  const versus = r.convDiff !== null ? `<small>${esc(baseName)} ${fmtPct(r.baseConv)} <em class="${r.convDiff >= 0 ? 'up' : 'down'}" title="${PP_TIP}">${fmtDiff(r.convDiff)}</em></small>` : '';
+  return `<span class="rg-conv${r.thin ? ' thin' : ''}" title="Share of this commander's decks that reached the top cut (tournaments without a top cut are not counted)">
+    <i>Conversion</i><b>${fmtPct(r.conv)}</b><small>${r.cut} of ${r.elig}${r.thin ? ' · small sample' : ''}</small>${versus}</span>`;
+}
 
 function rowHtml(r) {
   const pics = r.names.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2) // partners: both arts side by side
@@ -39,7 +50,8 @@ function rowHtml(r) {
     <span class="rg-art">${pics}</span>
     <span class="rg-rank">${r.rank}</span>
     <span class="rg-who"><b>${esc(r.name)}</b><span class="rg-bars">${bar('a', r.pct)}${compare ? bar('w', r.basePct) : ''}</span></span>
-    <span class="rg-num"><b>${fmtPct(r.pct)}</b><small>${plural(r.n, 'deck')}</small>${compare ? `<small>${esc(baseName)} ${fmtPct(r.basePct)} <em class="${r.diff >= 0 ? 'up' : 'down'}">${fmtDiff(r.diff)}</em></small>` : ''}</span>
+    ${convHtml(r)}
+    <span class="rg-num" title="Share of all the decks in the region"><i>Meta share</i><b>${fmtPct(r.pct)}</b><small>${plural(r.n, 'deck')}</small>${compare ? `<small>${esc(baseName)} ${fmtPct(r.basePct)} <em class="${r.diff >= 0 ? 'up' : 'down'}" title="${PP_TIP}">${fmtDiff(r.diff)}</em></small>` : ''}</span>
   </li>`;
 }
 
@@ -65,6 +77,13 @@ function filterRows() {
   matching = q ? rows.filter((r) => r.name.toLowerCase().includes(q)) : rows;
 }
 
+// The "Sort by" menu; "Biggest differences" only exists while comparing two regions
+function drawSort(comparing) {
+  const options = [['most', 'Most played'], ['conv', 'Conversion rate'], ...(comparing ? [['diff', 'Biggest differences']] : [])];
+  $('rg-sort').innerHTML = options.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  $('rg-sort').value = view.sort;
+}
+
 function drawColors() {
   const key = colorFilter(view.colors);
   document.querySelectorAll('#rg-colors button').forEach((b) => b.setAttribute('aria-pressed', String(view.colors.has(b.dataset.c))));
@@ -77,16 +96,14 @@ function rebuild() {
   const scope = scopeFor(counts, view.region);
   const base = baselineScope();
   const colorKey = colorFilter(view.colors);
-  if (!base) view.sort = 'most'; // nothing to compare with
+  if (!base && view.sort === 'diff') view.sort = 'most'; // nothing to compare with
   rows = rank(meta, scope, base, view.sort, colorKey);
   maxPct = Math.max(1, ...rows.map((r) => Math.max(r.pct, r.basePct || 0)));
   baseName = base ? regionLabel(meta, view.vs) : '';
   filterRows();
 
   $('rg-sub').textContent = `Share of ${view.region === 'world' ? 'all decks played worldwide' : `decks played in ${regionLabel(meta, view.region)}`}${base ? `, compared with ${sentence(view.vs)}` : ''}.`;
-  $('rg-diff').hidden = !base;
-  $('rg-most').setAttribute('aria-pressed', String(view.sort === 'most'));
-  $('rg-diff').setAttribute('aria-pressed', String(view.sort === 'diff'));
+  drawSort(!!base);
   $('rg-legend').hidden = !base;
   $('rg-legend-a').textContent = regionLabel(meta, view.region);
   $('rg-legend-b').textContent = base ? baseName : '';
@@ -94,15 +111,22 @@ function rebuild() {
 
   const totals = colorTotals(meta, scope, colorKey);
   const stats = [[totals.decks.toLocaleString(), 'decks'], [scope.tournaments.toLocaleString(), 'tournaments'], [totals.commanders.toLocaleString(), 'commanders']];
+  const field = fieldConversion(scope);
+  if (field !== null) stats.push([fmtPct(field), 'avg. conversion']);
   if (colorKey !== null) stats.push([scope.decks ? `${((totals.decks / scope.decks) * 100).toFixed(1)}%` : '0%', 'of all decks']);
   $('rg-stats').innerHTML = stats.map(([n, label]) => `<div><b>${n}</b>${label}</div>`).join('');
 
   const notes = [];
+  if (scope.hiddenDecks) notes.push(`${plural(scope.hiddenDecks, 'deck')} of commanders with fewer than ${view.minEntries} entries in the world ${scope.hiddenDecks === 1 ? 'is' : 'are'} left out of every percentage here.`);
   if (scope.unknown) notes.push(`${plural(scope.unknown, 'player')} without a listed commander ${scope.unknown === 1 ? "isn't" : "aren't"} counted.`);
   if (counts.unplaced && (view.region === 'world' || view.vs === 'world')) notes.push(`${plural(counts.unplaced, 'tournament')} couldn't be placed in a country, so ${counts.unplaced === 1 ? 'it only appears' : 'they only appear'} under World.`);
   if (colorKey !== null) {
     notes.push(`Percentages are a share of all decks in ${sentence(view.region)}, not only of the selected colors.`);
     if (totals.unknownDecks) notes.push(`${plural(totals.unknownDecks, 'deck')} with no color data ${totals.unknownDecks === 1 ? 'is' : 'are'} left out.`);
+  }
+  if (view.sort === 'conv') {
+    const none = scope.tournaments - scope.cutTournaments;
+    notes.push(`Conversion is the share of a commander's decks that reached the top cut${none ? `, counting only the ${plural(scope.cutTournaments, 'tournament')} that had one (${none} had none)` : ''}. Commanders with fewer than ${MIN_CONV_DECKS} such decks are listed last.`);
   }
   if (view.sort === 'diff') notes.push('Only commanders with enough decks to compare are ranked.');
   $('rg-note').textContent = notes.join(' ');
@@ -125,7 +149,7 @@ function regionOptions(selected, withNone) {
 
 // Re-adds up the tournaments (new filters) and refreshes both region lists, which show how many decks each region has
 function recount() {
-  counts = tally(meta, pick(view.players, view.months));
+  counts = tally(meta, pick(view.players, view.months), view.minEntries);
   $('rg-region').innerHTML = regionOptions(view.region, false);
   $('rg-vs').innerHTML = regionOptions(view.vs, true);
   $('rg-region').value = view.region;
@@ -136,10 +160,12 @@ function recount() {
 export async function openRegional() {
   view.players = state.minPlayers; // start from the filter bar
   view.months = state.months;
+  view.minEntries = DEFAULT_MIN_ENTRIES; // every visit starts hiding the rarest decks
   view.query = '';
   $('rg-search').value = '';
   $('rg-players').value = String(view.players);
   $('rg-months').value = String(view.months);
+  $('rg-entries').value = String(view.minEntries);
   $('rg-list').innerHTML = '<li class="msg">Loading…</li>';
   $('rg-more').hidden = true;
   openPanel($('rg-modal'), $('rg-scroll'), document.querySelector('.rg-card')); // on phones the whole card scrolls
@@ -167,9 +193,8 @@ export function initRegional() {
   });
   $('rg-players').addEventListener('change', (e) => { view.players = +e.target.value; recount(); });
   $('rg-months').addEventListener('change', (e) => { view.months = +e.target.value; recount(); });
-  for (const [id, sort] of [['rg-most', 'most'], ['rg-diff', 'diff']]) {
-    $(id).addEventListener('click', () => { if (view.sort !== sort) { view.sort = sort; rebuild(); } });
-  }
+  $('rg-entries').addEventListener('change', (e) => { view.minEntries = +e.target.value; recount(); });
+  $('rg-sort').addEventListener('change', (e) => { view.sort = e.target.value; rebuild(); });
   // Colors: W U B R G pick the exact identity; colorless excludes the rest (no deck is both)
   $('rg-colors').addEventListener('click', (e) => {
     const b = e.target.closest('button');

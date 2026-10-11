@@ -139,7 +139,12 @@
     <div class="card rg-card" role="dialog" aria-modal="true" aria-labelledby="rg-title">
       <button class="close" data-close="regional" aria-label="Close">×</button>
       <header class="rg-head">
-        <h2 id="rg-title">Regional Metagame</h2>
+        <div class="rg-titlebar">
+          <h2 id="rg-title">Regional Metagame</h2>
+          <a class="rg-info" href="methodology" target="_blank" rel="noopener" aria-label="How these numbers are calculated (opens in a new tab)" title="How these numbers are calculated">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.4" r=".6" fill="currentColor"/></svg>
+          </a>
+        </div>
         <p id="rg-sub" class="rg-sub"></p>
         <div class="rg-controls">
           <div class="rg-pair">
@@ -152,6 +157,11 @@
           <label>Players
             <select id="rg-players">
               <option value="0">All</option><option value="16">16+</option><option value="30">30+</option><option value="50">50+</option><option value="100">100+</option>
+            </select>
+          </label>
+          <label title="Hides commanders with fewer decks than this in the selected period, so rarely played or casual decks don't count">Min. entries
+            <select id="rg-entries">
+              <option value="0">All</option><option value="20" selected>20</option><option value="60">60</option><option value="120">120</option>
             </select>
           </label>
           <label>Period
@@ -174,10 +184,7 @@
           <button id="rg-colorclear" type="button" hidden>Clear</button>
         </div>
         <div class="rg-tools">
-          <div class="rg-seg" role="group" aria-label="Sort commanders">
-            <button id="rg-most" type="button" aria-pressed="true">Most played</button>
-            <button id="rg-diff" type="button" aria-pressed="false" hidden>Biggest differences</button>
-          </div>
+          <label>Sort by <select id="rg-sort"></select></label>
           <input id="rg-search" type="search" placeholder="Search commander" aria-label="Search commander" autocomplete="off">
         </div>
         <div class="rg-stats" id="rg-stats"></div>
