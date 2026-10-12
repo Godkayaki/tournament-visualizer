@@ -10,6 +10,7 @@
 
 import { mkdir, writeFile, readFile, readdir, appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { seatStats } from './seats.mjs';
 
 const KEY = process.env.TOPDECK_API_KEY;
 if (!KEY) { console.error('Missing TOPDECK_API_KEY'); process.exit(1); }
@@ -41,6 +42,7 @@ async function query(start, end) {
           start,
           end,
           columns: ['name', 'id', 'decklist', 'wins', 'draws', 'losses'],
+          rounds: true, // pairings with the winner of every table: used for the seat win rates (see seats.mjs)
         }),
         signal: AbortSignal.timeout(120_000),
       });
@@ -124,7 +126,7 @@ if (!skipFetch) {
   }
 
   const byId = new Map(previous.map((t) => [t.id, t]));
-  let noLocation = 0, noStandings = 0;
+  let noLocation = 0, noStandings = 0, withSeats = 0;
   const recentSkips = []; // what we dropped from the last few days, so a "missing" tournament can be explained from the log
   const skip = (t, why) => {
     if (t.startDate >= NOW - 5 * 86400) recentSkips.push(`${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${t.tournamentName}  (${why})`);
@@ -136,10 +138,13 @@ if (!skipFetch) {
     if (!t.standings?.length) { noStandings++; skip(t, 'no standings'); continue; }
 
     const f = String(t.TID).replace(/[^\w-]/g, '_');
+    const seat = seatStats(t); // [games, wins seat 1..4] or null
+    if (seat) withSeats++;
     byId.set(t.TID, {
       id: t.TID, f, n: t.tournamentName, d: t.startDate,
       lat, lng, c: city || '', s: state || '',
       p: t.standings.length, sw: t.swissNum || 0, tc: t.topCut || 0,
+      ...(seat ? { seat } : {}),
     });
     // Standings are kept in the order the API returns them (assumed to be final placement).
     await writeFile(`${OUT}t/${f}.json`, JSON.stringify(
@@ -151,6 +156,7 @@ if (!skipFetch) {
   await writeFile(OUT + 'tournaments.json', JSON.stringify({ generated: NOW, version, tournaments: index }));
   console.log(`Wrote ${index.length} located tournaments (of ${seen.size} fetched)`);
   console.log(`Skipped: ${noLocation} without coordinates, ${noStandings} without standings`);
+  console.log(`Seat results: ${withSeats} of the tournaments fetched this run have them${withSeats ? '' : '  <-- none: check that the API returned `rounds` for the tables'}`);
   const newest = [...seen.values()].sort((a, b) => b.startDate - a.startDate).slice(0, 5);
   console.log('Newest tournaments returned by the API:');
   for (const t of newest) console.log(`  ${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${t.tournamentName}`);
@@ -166,6 +172,7 @@ if (!skipFetch) {
     `| Fetched since | ${iso(from)} |`,
     `| Fetched / now in the index | ${seen.size} / ${index.length} |`,
     `| Skipped | ${noLocation} without coordinates, ${noStandings} without standings |`,
+    `| With seat results (this run) | ${withSeats} |`,
     `| Newest returned by the API | ${newest[0] ? `${iso(newest[0].startDate)} ${newest[0].tournamentName}` : 'none'} |`,
     `| Newest in the index | ${index[0] ? `${iso(index[0].d)} ${index[0].n}` : 'none'} |`,
     '',

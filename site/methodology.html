@@ -57,7 +57,7 @@
       <li><strong>Tournaments and standings</strong> come from the <a href="https://topdeck.gg" target="_blank" rel="noopener">TopDeck.gg</a> API: name, date, location, number of players, size of the top cut, and for each player the final standing and the commander(s) listed in their decklist.</li>
       <li><strong>Card art and color identity</strong> come from <a href="https://scryfall.com/" target="_blank" rel="noopener">Scryfall</a>.</li>
       <li><strong>Country borders</strong> come from the open <a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a> dataset.</li>
-      <li>The data is refreshed <b>daily at 05:00 AM UTC</b>. The exact time of the last update is shown in the footer of the globe page. This is heavily dictated by when Github Actions decides to run the fetch-data script, which heavily delayed.</li>
+      <li>The data is refreshed <b>daily at 05:00 AM UTC</b>. The exact time of the last update is shown in the footer of the globe page.</li>
     </ul>
 
     <h3>Which tournaments are counted</h3>
@@ -102,6 +102,26 @@
       <li><strong>Tournaments without a top cut are left out</strong> of both sides of the division. Those events, usually small ones, can't tell us anything about conversion, so counting their decks as &ldquo;not converted&rdquo; would lower every rate for something that isn't the deck's fault. The row shows the exact figures, for example &ldquo;31 of 118&rdquo;.</li>
       <li>The average conversion in the window's header is the same calculation over every deck of the region.</li>
       <li><strong>Small samples.</strong> With few decks the rate says little (1 top cut in 2 decks isn't 50%). Commanders with fewer than 10 decks in tournaments with a top cut are marked <em>small sample</em>, shown dimmed, and listed after all the others when sorting by conversion.</li>
+    </ul>
+
+    <h3>Average draw rate</h3>
+    <p>Shown at the end of the stats under the sort menu. It is the share of games that ended in a draw, <b>averaged over tournaments</b>:</p>
+    <ul>
+      <li>For each tournament, <code>games that were draws &divide; games played</code>, taken from the win-loss-draw records of all its players. A drawn game adds one draw to every player at the pod, so the share of draws among all recorded results is the share of drawn games.</li>
+      <li>The region's figure is the plain average of its tournaments, so every tournament weighs the same whatever its size. Tournaments with no games recorded are skipped.</li>
+      <li>When comparing, the other region's rate is shown next to it, with the gap in <strong>pp</strong>.</li>
+      <li>The tournament window shows the draw rate of that single tournament, calculated the same way.</li>
+      <li>It describes tournaments, so the Min. entries and color filters don't change it. The period, players and region do.</li>
+    </ul>
+
+    <h3>Seat win rate</h3>
+    <p>Only the tournament window shows it, next to the draw rate. It is shown as <em>S1 WR</em> to <em>S4 WR</em> (win rate of seat 1 to 4) and says how often each seat of the pod won in that tournament, so you can see whether going first (1st) or last (4th) was an advantage there.</p>
+    <ul>
+      <li>It comes from the pairings TopDeck publishes for each round, which list the players of every table in seat order and say who won.</li>
+      <li>Each number is <code>games won from that seat &divide; games played</code>, counting every round (Swiss and top cut) and only completed four-player pods. Byes and pods of other sizes are left out.</li>
+      <li>A drawn game counts as played but is won from no seat, so the four percentages plus the draw rate add up to 100%.</li>
+      <li>One tournament is a small sample (a few hundred games at most), so differences of a few points are normal luck. Don't read much into a single event.</li>
+      <li>Tournaments loaded before this feature existed, or without round data, simply don't show the line.</li>
     </ul>
 
     <h3>Regions</h3>

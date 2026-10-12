@@ -23,7 +23,7 @@ export const regionLabel = (meta, key) => (key === 'world' ? 'World' : key.start
 
 // counts: commander -> decks. cuts: commander -> decks that made the top cut. eligible: commander -> decks played in tournaments
 // that HAD a top cut (the denominator of the conversion rate). eligibleDecks / cutDecks are the same sums for the whole scope.
-const newScope = () => ({ hiddenDecks: 0, tournaments: 0, cutTournaments: 0, unknown: 0, decks: 0, eligibleDecks: 0, cutDecks: 0, counts: new Map(), cuts: new Map(), eligible: new Map() });
+const newScope = () => ({ drawRateSum: 0, drawTournaments: 0, hiddenDecks: 0, tournaments: 0, cutTournaments: 0, unknown: 0, decks: 0, eligibleDecks: 0, cutDecks: 0, counts: new Map(), cuts: new Map(), eligible: new Map() });
 const bump = (map, key, n) => { if (n) map.set(key, (map.get(key) || 0) + n); };
 
 // Adds up the given tournaments: one scope for the whole world, one per continent and one per country
@@ -43,8 +43,9 @@ export function tally(meta, tournaments, minEntries = 0) {
       if (continent) scopes.push(continent);
     } else unplaced++;
     const hasCut = row[2] === 1;
-    for (const s of scopes) { s.tournaments++; s.unknown += row[1]; if (hasCut) s.cutTournaments++; }
-    for (let i = 3; i < row.length; i += 3) {
+    const [drawGames, games] = [row[3], row[4]];
+    for (const s of scopes) { if (games > 0) { s.drawRateSum += drawGames / games; s.drawTournaments++; } s.tournaments++; s.unknown += row[1]; if (hasCut) s.cutTournaments++; }
+    for (let i = 5; i < row.length; i += 3) {
       const [id, n, cut] = [row[i], row[i + 1], row[i + 2]];
       for (const s of scopes) {
         bump(s.counts, id, n); s.decks += n;
@@ -112,6 +113,19 @@ const conversion = (scope, id) => {
   const cut = id === null ? scope.cutDecks : scope.cuts.get(id) || 0;
   return elig ? (cut / elig) * 100 : null;
 };
+// Average draw rate per tournament, as a percentage of games; null when no tournament has games recorded.
+export const avgDrawRate = (scope) => (scope.drawTournaments ? (scope.drawRateSum / scope.drawTournaments) * 100 : null);
+// Average draw rate (%) over a list of tournaments, straight from meta.json (schema 4+): the mean of each tournament's own rate.
+// null when none of them has games recorded.
+export function avgDrawRateOf(meta, tournaments) {
+  if (!(meta.schema >= 4)) return null; // older files don't have the draw numbers
+  let sum = 0, n = 0;
+  for (const t of tournaments) {
+    const row = meta.t[t.id];
+    if (row && row[4] > 0) { sum += row[3] / row[4]; n++; }
+  }
+  return n ? (sum / n) * 100 : null;
+}
 export const fieldConversion = (scope) => conversion(scope, null);
 
 // Every commander of `scope`, ranked. `baseline` (a scope, or null) adds the baseline's share and the gap in percentage points.

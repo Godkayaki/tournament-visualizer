@@ -75,6 +75,9 @@
 .rg-tools label { display: flex; align-items: center; gap: 8px; color: var(--dim); font-size: 13px; }
 
 .rg-stats { display: flex; flex-wrap: wrap; gap: 8px 26px; margin-top: 12px; color: var(--dim); font-size: 13px; }
+.rg-stats small { display: block; font-size: 12px; color: #b9c5de; }
+.rg-stats em { font-style: normal; font-weight: 600; }
+.rg-stats .up { color: var(--accent); }
 .rg-stats b { display: block; color: var(--text); font-size: 18px; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .rg-legend { margin: 8px 0 0; color: var(--dim); font-size: 12px; }
 .rg-legend[hidden] { display: none; }

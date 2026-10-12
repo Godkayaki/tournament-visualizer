@@ -20,8 +20,12 @@
 //     countries:  [{ code, name, continent }, ...]   only countries that have tournaments
 //     commanders: [[name, ...], ...]             one entry per commander or partner pair (names sorted, so A/B = B/A)
 //     colors:     ["GU", "", null, ...]          color identity of each commander entry, in WUBRG order ("" = colorless, null = unknown)
-//     t: { <tournament id>: [countryIndex or -1, decksWithoutCommander, hasTopCut (1/0), commanderIndex, decks, topCutDecks, commanderIndex, decks, topCutDecks, ...] }
+//     t: { <tournament id>: [countryIndex or -1, decksWithoutCommander, hasTopCut (1/0), drawGames, games, commanderIndex, decks, topCutDecks, commanderIndex, decks, topCutDecks, ...] }
 //   }
+//
+// Draw rate of a tournament = drawGames / games, from the W/L/D records of ALL its players (a draw is one "D" for every player at
+// the pod, a win is one "W" and three "L", so the share of D among every W+L+D is the share of games that were drawn). The front-end
+// averages it over tournaments; one with no games recorded is skipped.
 //
 // Conversion = decks that made the top cut / decks played, counting only tournaments that had a top cut (hasTopCut = 1). A deck
 // is in the top cut when its player is among the first `topCut` rows of the standings (kept in final-placement order by
@@ -31,7 +35,7 @@ import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
-const SCHEMA = 3; // bump when the layout or the counting rules change, so cached files get rebuilt
+const SCHEMA = 4; // bump when the layout or the counting rules change, so cached files get rebuilt
 const NEAREST_KM = 50;
 const SCRYFALL_URL = process.env.SCRYFALL_URL || 'https://api.scryfall.com';
 const SCRYFALL_HEADERS = { 'User-Agent': 'cedh-globe/1.0 (https://github.com/Godkayaki/tournament-visualizer)', Accept: 'application/json', 'Content-Type': 'application/json' };
@@ -171,8 +175,9 @@ for (const tour of index.tournaments) {
 
   const counts = new Map(); // commander id -> [decks, top cut decks]
   const cutSize = tour.tc > 0 ? tour.tc : 0;
-  let unknown = 0;
+  let unknown = 0, drawGames = 0, games = 0;
   for (const [place, p] of rows.entries()) {
+    drawGames += +p.d || 0; games += (+p.w || 0) + (+p.l || 0) + (+p.d || 0);
     const names = [...new Set((p.c || []).map((s) => String(s).trim()).filter(Boolean))].sort(); // sorted: A/B and B/A are the same deck
     if (!names.length) { unknown++; continue; }
     const id = idOf(names);
@@ -191,7 +196,7 @@ for (const tour of index.tournaments) {
   } else if (features) unplaced.push(`${tour.n} (${tour.lat.toFixed(2)}, ${tour.lng.toFixed(2)})`);
 
   if (cutSize) withCut++;
-  const entry = [k, unknown, cutSize ? 1 : 0];
+  const entry = [k, unknown, cutSize ? 1 : 0, drawGames, games];
   for (const [id, [n, cut]] of [...counts].sort((a, b) => b[1][0] - a[1][0] || a[0] - b[0])) entry.push(id, n, cut);
   t[tour.id] = entry;
 }

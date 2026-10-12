@@ -5,7 +5,7 @@ import { state } from './state.js';
 import { pick } from './filters.js';
 import { loadMeta, loadArt } from './data.js';
 import { openPanel, closePanel } from './panels.js';
-import { tally, rank, scopeFor, regionExists, regionLabel, CONTINENTS, colorFilter, colorName, colorTotals, fieldConversion, MIN_CONV_DECKS } from './regional.js';
+import { tally, rank, scopeFor, regionExists, regionLabel, CONTINENTS, colorFilter, colorName, colorTotals, fieldConversion, avgDrawRate, MIN_CONV_DECKS } from './regional.js';
 
 const PAGE = 20; // rows added by each "Show more"
 
@@ -110,11 +110,17 @@ function rebuild() {
   drawColors();
 
   const totals = colorTotals(meta, scope, colorKey);
-  const stats = [[totals.decks.toLocaleString(), 'decks'], [scope.tournaments.toLocaleString(), 'tournaments'], [totals.commanders.toLocaleString(), 'commanders']];
+  const stats = [[scope.tournaments.toLocaleString(), 'tournaments']];
   const field = fieldConversion(scope);
   if (field !== null) stats.push([fmtPct(field), 'avg. conversion']);
   if (colorKey !== null) stats.push([scope.decks ? `${((totals.decks / scope.decks) * 100).toFixed(1)}%` : '0%', 'of all decks']);
-  $('rg-stats').innerHTML = stats.map(([n, label]) => `<div><b>${n}</b>${label}</div>`).join('');
+  const draw = avgDrawRate(scope);
+  if (draw !== null) {
+    const other = base ? avgDrawRate(base) : null;
+    const versus = other !== null ? `<small>${esc(baseName)} ${fmtPct(other)} <em class="${draw - other >= 0 ? 'up' : 'down'}" title="${PP_TIP}">${fmtDiff(draw - other)}</em></small>` : '';
+    stats.push([fmtPct(draw), 'avg. draw rate', versus]);
+  }
+  $('rg-stats').innerHTML = stats.map(([n, label, extra = '']) => `<div><b>${n}</b>${label}${extra}</div>`).join('');
 
   const notes = [];
   if (scope.hiddenDecks) notes.push(`${plural(scope.hiddenDecks, 'deck')} of commanders with fewer than ${view.minEntries} entries in the world ${scope.hiddenDecks === 1 ? 'is' : 'are'} left out of every percentage here.`);
@@ -160,6 +166,8 @@ function recount() {
 export async function openRegional() {
   view.players = state.minPlayers; // start from the filter bar
   view.months = state.months;
+  view.region = 'world'; // every visit starts as World with no comparison
+  view.vs = 'none';
   view.minEntries = DEFAULT_MIN_ENTRIES; // every visit starts hiding the rarest decks
   view.query = '';
   $('rg-search').value = '';

@@ -5,7 +5,8 @@
 - Tournaments without coordinates (online events) are skipped right now. My idea is to have a separate list that is somehow accessible (thinking about adding the moon and be clickable lol).
 - Regional metadata;
     - ~~Based on this I want to add local/regional meta information of what is being played where. This was the original idea, but I needed the rest of the page first. This might be a bit hard to do still, since I've noticed localization issues for the same location, like, for example, calling *Catalunya*, *Catalonia*. These are the same exact location but with different names.~~
-    - Add conversion rate on the regional metagame menu list.
+    - ~~Add conversion rate on the regional metagame menu list.~~
+    - Add the avg Draw rate% and Seat Winrate% (with the applied filters)
     - Add in-depth info about single commanders (including region filters);
         - CR%
         - Spicy impactful cards
@@ -20,6 +21,8 @@
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
 - Increase performance (not that it's bad, but you can always do better). 
+- Add "View Metagame" on tournament view.
+- Add another line on the tournament view that shows Draw rate% and Seat Winrate%.
 
 <details>
 

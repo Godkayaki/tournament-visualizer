@@ -25,7 +25,7 @@ for (const t of index.tournaments) {
   const row = meta.t[t.id]; if (!row) { noRow++; continue; }
   if (country && meta.countries[row[0]]?.code !== country) continue;
   tournaments++; unknown += row[1]; const hasCut = row[2] === 1; if (hasCut) withCut++;
-  for (let i = 3; i < row.length; i += 3) {
+  for (let i = 5; i < row.length; i += 3) {
     const [id, n, cut] = [row[i], row[i + 1], row[i + 2]];
     const c = per.get(id) || { decks: 0, cut: 0, eligDecks: 0 }; per.set(id, c);
     c.decks += n; c.cut += cut; known += n;
