@@ -124,6 +124,24 @@
       <li>Tournaments loaded before this feature existed, or without round data, simply don't show the line.</li>
     </ul>
 
+    <h3>The commander view</h3>
+    <p>Clicking a commander in the Regional Metagame list opens its own view, with a banner, a chart over time and its numbers. It uses the same filters as the list (region, compare with, players, min. entries and period), so changing any of them updates it, and <em>All commanders</em> (or Esc) takes you back.</p>
+    <ul>
+      <li><strong>The chart</strong> shows either the commander's <em>meta share</em> or its <em>conversion rate</em> for each period of time, for the region (turquoise line) and, if you pick one in <em>Compare with</em>, a second region (amber line). By default it is World with no comparison. Hover or touch the chart for the exact values and the number of decks behind each point. The same data is available as a table under the chart.</li>
+      <li><strong>Time periods:</strong> <em>Group by</em> chooses weeks or months; <em>Auto</em> uses weeks for periods of about four months or less and months for longer ones. A period with no tournaments in the region (or, for conversion, none with a top cut) is a gap in the line, not a zero.</li>
+      <li><strong>Meta share</strong> in each period is calculated like in the list: the commander's decks divided by all decks with a listed commander in that region and period, after the Min. entries filter. The cards under the chart give the figure for the whole period.</li>
+      <li><strong>Conversion</strong> uses the same rule as the list (only tournaments with a top cut, <em>small sample</em> under 10 decks), so a single week can swing a lot.</li>
+      <li><strong>Seat win rate</strong> is the share of games that this commander won from each seat: <code>games won from that seat &divide; games it played from that seat</code>, in completed four-player pods. It is built from the same pairings as the tournament window, assigning each game to the commander the player at that seat was using. A fair table would be a little under 25% for every seat, since draws are won by nobody. Counts are small for rare commanders, so check the number of games next to each rate.</li>
+      <li>Seat data exists only for tournaments loaded after it was added to the site. Until all the data is rebuilt the seat table can be empty or based on fewer games than the other figures.</li>
+    </ul>
+
+    <h3>Commander view tabs</h3>
+    <ul>
+      <li><strong>Commander data</strong> has the chart and numbers described above.</li>
+      <li><strong>Tournaments</strong> lists every deck of that commander in the tournaments that pass the filters (region, players and period). Each row is one player's finish: place, tournament, date, location and size, player and record. They are sorted by final place, with the winners first; among equal places the tournament with more players goes first (then the most recent). Clicking a row opens that player's decklist on TopDeck.gg in a new tab. The place is the player's position in the standings TopDeck publishes.</li>
+      <li><strong>Spicy cards</strong> is not available yet.</li>
+    </ul>
+
     <h3>Regions</h3>
     <ul>
       <li>A tournament belongs to the <strong>country</strong> whose borders contain the location TopDeck lists for it. It is the location of the event, not where the players live. If the point falls just outside every border (a coast, a small island), it is assigned to the nearest country if that is within 50 km.</li>

@@ -7,7 +7,7 @@ import { avgDrawRateOf } from './regional.js';
 import { openPanel, closePanel } from './panels.js';
 
 // If topdeck's deck URL pattern differs, change it here.
-const deckUrl = (tid, playerId) => `https://topdeck.gg/deck/${tid}/${playerId}`;
+export const deckUrl = (tid, playerId) => `https://topdeck.gg/deck/${tid}/${playerId}`;
 const MEDAL = ['🥇', '🥈', '🥉'];
 
 export const closeModal = () => closePanel($('modal'));

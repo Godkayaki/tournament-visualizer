@@ -10,7 +10,7 @@
 
 import { mkdir, writeFile, readFile, readdir, appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { seatStats } from './seats.mjs';
+import { seatStats, playerSeats } from './seats.mjs';
 
 const KEY = process.env.TOPDECK_API_KEY;
 if (!KEY) { console.error('Missing TOPDECK_API_KEY'); process.exit(1); }
@@ -139,6 +139,7 @@ if (!skipFetch) {
 
     const f = String(t.TID).replace(/[^\w-]/g, '_');
     const seat = seatStats(t); // [games, wins seat 1..4] or null
+    const perPlayer = playerSeats(t); // player id -> [games at seat 1..4, wins at seat 1..4]
     if (seat) withSeats++;
     byId.set(t.TID, {
       id: t.TID, f, n: t.tournamentName, d: t.startDate,
@@ -148,7 +149,7 @@ if (!skipFetch) {
     });
     // Standings are kept in the order the API returns them (assumed to be final placement).
     await writeFile(`${OUT}t/${f}.json`, JSON.stringify(
-      t.standings.map((p) => ({ n: p.name, i: p.id, c: commanders(p), w: p.wins || 0, d: p.draws || 0, l: p.losses || 0 }))
+      t.standings.map((p) => ({ n: p.name, i: p.id, c: commanders(p), w: p.wins || 0, d: p.draws || 0, l: p.losses || 0, ...(perPlayer?.has(p.id) ? { q: perPlayer.get(p.id) } : {}) }))
     ));
   }
 

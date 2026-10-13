@@ -64,6 +64,8 @@ As a side note, I've also added a `check-recent.mjs` file that you can run to ch
 ## Regional Metagame
  
 The **Regional Metagame** button opens a window with the share of decks played per commander. Comparison between regions available (the world, a continent or a country) as well as filters by color. Percentages are always a share of all the decks in the region, so a color filter only hides commanders.
+
+Clicking a commander opens its commander view (`js/commander-ui.js`, maths in `js/commander.js`, line chart in `js/chart.js`): banner, meta share or conversion over time for the region and an optional second one, and its numbers including the win rate of each seat. Seat results per commander come from `data/seats.json`, which `scripts/build-meta.mjs` builds from the q field (the player's games and wins per seat) that `scripts/fetch-data.mjs` writes into each standings file; it needs a full fetch once to exist for old tournaments.
  
 A tournament belongs to the country whose borders contain its coordinates (a point just offshore goes to the nearest country, within 50 km), and the continent comes from the same borders file. `scripts/build-meta.mjs` writes `data/meta.json` with the counts per tournament, plus each commander's color identity from Scryfall (cached in `data/colors.json`, so only new commanders are looked up). The browser adds up the tournaments that pass the filters, so the Players and Period choices work like on the globe. Players without a listed commander are left out of the percentages.
  

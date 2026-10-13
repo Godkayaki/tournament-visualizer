@@ -5,6 +5,7 @@ import { state } from './state.js';
 import { pick } from './filters.js';
 import { loadMeta, loadArt } from './data.js';
 import { openPanel, closePanel } from './panels.js';
+import { showCommander, hideCommander, renderCommander, initCommander } from './commander-ui.js';
 import { tally, rank, scopeFor, regionExists, regionLabel, CONTINENTS, colorFilter, colorName, colorTotals, fieldConversion, avgDrawRate, MIN_CONV_DECKS } from './regional.js';
 
 const PAGE = 20; // rows added by each "Show more"
@@ -12,7 +13,10 @@ const PAGE = 20; // rows added by each "Show more"
 // What the window shows. Players and period start from the filter bar every time it opens; the rest is remembered.
 // region / vs are region keys (see regional.js); vs can also be 'none'.
 // sort is 'most' (most played), 'conv' (conversion rate) or 'diff' (biggest differences, only while comparing).
-const view = { region: 'world', vs: 'world', players: 30, months: 6, minEntries: 20, sort: 'most', colors: new Set(), query: '' };
+const view = { region: 'world', vs: 'world', players: 30, months: 6, minEntries: 20, sort: 'most', colors: new Set(), query: '',
+  commander: null, dTab: 'data', dMetric: 'share', dGroup: 'auto' }; // commander: id of the commander whose own view is open (commander-ui.js), or null
+let picked = [];       // the tournaments that pass view.players / view.months
+let listStale = false; // filters changed while a commander was open: the list is redrawn when going back
 let meta = null;       // data/meta.json
 let art = {};          // commander -> art URLs
 let counts = null;     // tally() of the tournaments that pass view.players / view.months
@@ -46,7 +50,7 @@ function rowHtml(r) {
     .map((u) => `<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('');
   const bar = (cls, v) => `<i class="${cls}" style="width:${((v / maxPct) * 100).toFixed(1)}%${v > 0 ? ';min-width:3px' : ''}"></i>`;
   const compare = r.basePct != null;
-  return `<li class="rg-row">
+  return `<li class="rg-row" data-id="${r.id}" tabindex="0" role="button" title="Open the details of ${esc(r.name)}">
     <span class="rg-art">${pics}</span>
     <span class="rg-rank">${r.rank}</span>
     <span class="rg-who"><b>${esc(r.name)}</b><span class="rg-bars">${bar('a', r.pct)}${compare ? bar('w', r.basePct) : ''}</span></span>
@@ -91,6 +95,20 @@ function drawColors() {
   $('rg-colorclear').hidden = key === null;
 }
 
+function drawSub(base = baselineScope()) {
+  $('rg-sub').textContent = `Share of ${view.region === 'world' ? 'all decks played worldwide' : `decks played in ${regionLabel(meta, view.region)}`}${base ? `, compared with ${sentence(view.vs)}` : ''}.`;
+}
+
+// The commander's view needs the window's data and filters; this is what it gets
+const commanderContext = () => ({ meta, art, view, tournaments: picked, allowed: view.minEntries > 0 && counts ? new Set(counts.world.counts.keys()) : null });
+
+// Back from a commander to the ranking
+function backToList() {
+  hideCommander(!listStale);
+  drawSub();
+  if (listStale) { listStale = false; $('rg-scroll').scrollTop = 0; drawList(true); }
+}
+
 // Ranks the current view and redraws everything under the controls
 function rebuild() {
   const scope = scopeFor(counts, view.region);
@@ -102,7 +120,7 @@ function rebuild() {
   baseName = base ? regionLabel(meta, view.vs) : '';
   filterRows();
 
-  $('rg-sub').textContent = `Share of ${view.region === 'world' ? 'all decks played worldwide' : `decks played in ${regionLabel(meta, view.region)}`}${base ? `, compared with ${sentence(view.vs)}` : ''}.`;
+  drawSub(base);
   drawSort(!!base);
   $('rg-legend').hidden = !base;
   $('rg-legend-a').textContent = regionLabel(meta, view.region);
@@ -136,6 +154,7 @@ function rebuild() {
   }
   if (view.sort === 'diff') notes.push('Only commanders with enough decks to compare are ranked.');
   $('rg-note').textContent = notes.join(' ');
+  if (view.commander !== null) { listStale = true; renderCommander(); return; } // the list is redrawn when going back
   $('rg-scroll').scrollTop = 0;
   drawList(true);
 }
@@ -155,7 +174,8 @@ function regionOptions(selected, withNone) {
 
 // Re-adds up the tournaments (new filters) and refreshes both region lists, which show how many decks each region has
 function recount() {
-  counts = tally(meta, pick(view.players, view.months), view.minEntries);
+  picked = pick(view.players, view.months);
+  counts = tally(meta, picked, view.minEntries);
   $('rg-region').innerHTML = regionOptions(view.region, false);
   $('rg-vs').innerHTML = regionOptions(view.vs, true);
   $('rg-region').value = view.region;
@@ -170,6 +190,8 @@ export async function openRegional() {
   view.vs = 'none';
   view.minEntries = DEFAULT_MIN_ENTRIES; // every visit starts hiding the rarest decks
   view.query = '';
+  hideCommander(false); // always opens on the ranking
+  listStale = false;
   $('rg-search').value = '';
   $('rg-players').value = String(view.players);
   $('rg-months').value = String(view.months);
@@ -191,7 +213,16 @@ export async function openRegional() {
 
 export function initRegional() {
   document.querySelectorAll('.regional-open').forEach((b) => b.addEventListener('click', openRegional));
-  addEventListener('keydown', (e) => { if (e.key === 'Escape') closeRegional(); });
+  initCommander(commanderContext, backToList);
+  addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || $('rg-modal').hidden) return;
+    if (view.commander !== null) backToList(); else closeRegional(); // Esc goes back from a commander first
+  });
+  $('rg-list').addEventListener('click', (e) => { const row = e.target.closest('.rg-row'); if (row) showCommander(+row.dataset.id); });
+  $('rg-list').addEventListener('keydown', (e) => {
+    const row = e.target.closest('.rg-row');
+    if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); showCommander(+row.dataset.id); }
+  });
   $('rg-region').addEventListener('change', (e) => { view.region = e.target.value; rebuild(); });
   $('rg-vs').addEventListener('change', (e) => { view.vs = e.target.value; rebuild(); });
   $('rg-swap').addEventListener('click', () => {

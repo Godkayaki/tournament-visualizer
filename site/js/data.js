@@ -47,3 +47,18 @@ export async function loadFeatured() {
       .sort((a, b) => a.ts - b.ts); // soonest first
   } catch { return []; }
 }
+
+// Every deck of one commander (data/c/<index>.json, built by scripts/build-meta.mjs): [[tournament id, place, player id, player name, W, L, D], ...]
+// Cached per commander. null when the file doesn't exist (the data hasn't been rebuilt since this was added).
+const entriesCache = new Map();
+export const loadEntries = (id) => {
+  if (!entriesCache.has(id)) entriesCache.set(id, fetch(`data/c/${id}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+  return entriesCache.get(id);
+};
+
+// Per-commander seat results (built by scripts/build-meta.mjs from the rounds). Only the commander view needs it, so it is fetched
+// on first use. null when the file doesn't exist yet (the data hasn't been fully rebuilt since seats were added).
+let seatsPromise;
+export const loadSeats = () => (seatsPromise ??= fetch('data/seats.json')
+  .then((r) => (r.ok ? r.json() : null))
+  .catch(() => null));

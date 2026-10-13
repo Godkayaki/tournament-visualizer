@@ -27,15 +27,24 @@
 // the pod, a win is one "W" and three "L", so the share of D among every W+L+D is the share of games that were drawn). The front-end
 // averages it over tournaments; one with no games recorded is skipped.
 //
+// Seats: when the standings rows carry `q` (the player's [games at seat 1..4, wins at seat 1..4], written by fetch-data.mjs from the
+// rounds), they are added up per commander and tournament into data/seats.json, which only the commander view loads:
+//   { schema: 1, t: { <tournament id>: [commanderIndex, g1, g2, g3, g4, w1, w2, w3, w4, commanderIndex, ...] } }
+// (the commanderIndex is the same as in meta.json). Tournaments without seat data are simply absent.
+//
+// Entries: data/c/<commanderIndex>.json lists every deck of that commander, one row per deck, for the Tournaments tab of the commander view:
+//   [[tournament id, place (1 = winner), player id, player name, wins, losses, draws], ...]   (the place is the row in the standings)
+// The folder is wiped and rewritten on every build, because the commander indexes change from build to build.
+//
 // Conversion = decks that made the top cut / decks played, counting only tournaments that had a top cut (hasTopCut = 1). A deck
 // is in the top cut when its player is among the first `topCut` rows of the standings (kept in final-placement order by
 // fetch-data.mjs). In a tournament without a top cut every topCutDecks is 0 and the front-end leaves its decks out of the rate.
 
-import { readFile, writeFile, appendFile } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, mkdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
-const SCHEMA = 4; // bump when the layout or the counting rules change, so cached files get rebuilt
+const SCHEMA = 6; // bump when the layout or the counting rules change, so cached files get rebuilt
 const NEAREST_KM = 50;
 const SCRYFALL_URL = process.env.SCRYFALL_URL || 'https://api.scryfall.com';
 const SCRYFALL_HEADERS = { 'User-Agent': 'cedh-globe/1.0 (https://github.com/Godkayaki/tournament-visualizer)', Accept: 'application/json', 'Content-Type': 'application/json' };
@@ -166,6 +175,9 @@ const idOf = (names) => {
 };
 
 const t = {};
+const seatsOut = {};
+const entriesOut = new Map(); // commander id -> rows of data/c/<id>.json
+let seatTournaments = 0;
 let decks = 0, noCommander = 0, noStandings = 0, withCut = 0, cutDecks = 0;
 const unplaced = [];
 for (const tour of index.tournaments) {
@@ -174,6 +186,7 @@ for (const tour of index.tournaments) {
   catch { noStandings++; continue; }
 
   const counts = new Map(); // commander id -> [decks, top cut decks]
+  const seatCounts = new Map(); // commander id -> [games at seat 1..4, wins at seat 1..4]
   const cutSize = tour.tc > 0 ? tour.tc : 0;
   let unknown = 0, drawGames = 0, games = 0;
   for (const [place, p] of rows.entries()) {
@@ -181,6 +194,11 @@ for (const tour of index.tournaments) {
     const names = [...new Set((p.c || []).map((s) => String(s).trim()).filter(Boolean))].sort(); // sorted: A/B and B/A are the same deck
     if (!names.length) { unknown++; continue; }
     const id = idOf(names);
+    (entriesOut.get(id) || entriesOut.set(id, []).get(id)).push([tour.id, place + 1, p.i ?? '', p.n ?? '', +p.w || 0, +p.l || 0, +p.d || 0]);
+    if (Array.isArray(p.q) && p.q.length === 8) {
+      const s = seatCounts.get(id) || seatCounts.set(id, [0, 0, 0, 0, 0, 0, 0, 0]).get(id);
+      p.q.forEach((v, i) => { s[i] += +v || 0; });
+    }
     const c = counts.get(id) || counts.set(id, [0, 0]).get(id);
     c[0]++;
     if (place < cutSize) { c[1]++; cutDecks++; }
@@ -199,6 +217,10 @@ for (const tour of index.tournaments) {
   const entry = [k, unknown, cutSize ? 1 : 0, drawGames, games];
   for (const [id, [n, cut]] of [...counts].sort((a, b) => b[1][0] - a[1][0] || a[0] - b[0])) entry.push(id, n, cut);
   t[tour.id] = entry;
+  if (seatCounts.size) {
+    seatsOut[tour.id] = [...seatCounts].flatMap(([id, s]) => [id, ...s]);
+    seatTournaments++;
+  }
 }
 
 // ---- Color identity (Scryfall) ----
@@ -246,9 +268,15 @@ const colors = commanders.map((names) => { // a pair is the union of its command
 
 const meta = { schema: SCHEMA, generated: index.generated, ...(features ? {} : { bordersMissing: true }), ...(colorsFailed ? { colorsPending: true } : {}), countries, commanders, colors, t };
 await writeFile(OUT + 'meta.json', JSON.stringify(meta));
+await rm(OUT + 'c/', { recursive: true, force: true });
+await mkdir(OUT + 'c/', { recursive: true });
+for (const [id, list] of entriesOut) await writeFile(`${OUT}c/${id}.json`, JSON.stringify(list));
+if (seatTournaments) await writeFile(OUT + 'seats.json', JSON.stringify({ schema: 1, generated: index.generated, t: seatsOut }));
 
 const tournaments = Object.keys(t).length;
 console.log(`Wrote meta.json: ${tournaments} tournaments, ${decks} decks, ${commanders.length} commanders, ${countries.length} countries`);
+console.log(`Entries: ${entriesOut.size} commander files in data/c/`);
+console.log(`Seats: ${seatTournaments} tournaments with per-commander seat data${seatTournaments ? '' : ' (none yet: they appear after a full fetch-data run)'}`);
 console.log(`${withCut} of ${tournaments} tournaments have a top cut (${cutDecks} decks in it)`);
 console.log(`${colors.filter((c) => c === null).length} commanders without color identity${colorsFailed ? ` (${colorsFailed} lookups failed, will retry)` : ''}`);
 console.log(`${noCommander} players without a listed commander, ${noStandings} tournaments without standings, ${unplaced.length} not placed in a country`);
@@ -258,6 +286,7 @@ await summary([
   '| | |', '|---|---|',
   `| Tournaments / decks | ${tournaments} / ${decks} |`,
   `| Commanders (and partner pairs) | ${commanders.length} |`,
+  `| Tournaments with seat data | ${seatTournaments} |`,
   `| Countries | ${countries.length} |`,
   `| Tournaments with a top cut / decks in it | ${withCut} / ${cutDecks} |`,
   `| Commanders without color data | ${colors.filter((c) => c === null).length} |`,
