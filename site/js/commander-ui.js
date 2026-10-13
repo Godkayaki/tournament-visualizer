@@ -197,11 +197,19 @@ export function renderCommander() {
   const tab = TABS.some(([key]) => key === view.dTab) ? view.dTab : 'data';
   const body = (tab === 'tournaments' ? tournamentsTab : tab === 'spicy' ? spicyTab : dataTab)(c, id);
   $('rg-sub').textContent = body.sub;
-  $('rg-detail').innerHTML = `
-    <button type="button" class="rg-back">← All commanders</button>
-    ${bannerHtml(meta, art, id)}
-    <div class="rg-tabs" role="tablist">${TABS.map(([key, label]) => `<button type="button" role="tab" data-tab="${key}" aria-selected="${key === tab}">${label}</button>`).join('')}</div>
-    <div class="rg-panel" role="tabpanel">${body.html}</div>`;
+  // The back button, banner and tab bar are built once per commander; changing tab or filter only swaps the panel under them.
+  // (Rebuilding everything made the banner art reload and the whole window flicker.)
+  const detail = $('rg-detail');
+  if (detail.dataset.id !== String(id)) {
+    detail.dataset.id = String(id);
+    detail.innerHTML = `
+      <button type="button" class="rg-back">← All commanders</button>
+      ${bannerHtml(meta, art, id)}
+      <div class="rg-tabs" role="tablist">${TABS.map(([key, label]) => `<button type="button" role="tab" data-tab="${key}">${label}</button>`).join('')}</div>
+      <div class="rg-panel" role="tabpanel"></div>`;
+  }
+  detail.querySelectorAll('.rg-tabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  detail.querySelector('.rg-panel').innerHTML = body.html;
   body.after?.();
 }
 
@@ -210,6 +218,7 @@ export function showCommander(id) {
   const { view } = getContext();
   const scroller = $('rg-scroll'), card = document.querySelector('.rg-card');
   saved = { list: scroller.scrollTop, card: card.scrollTop };
+  $('rg-detail').dataset.id = ''; // a new shell for this commander
   view.commander = id;
   view.dTab = 'data'; // every commander opens on its data
   $('rg-modal').classList.add('detail');
