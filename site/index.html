@@ -36,22 +36,29 @@
   <link rel="icon" href="/static/logo.svg" type="image/svg+xml" sizes="any">
   <link rel="apple-touch-icon" type="image/png" sizes="167x167" href="static/logo-167x167.png"> 
   <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="static/logo-180x180.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://unpkg.com"> <!-- globe.gl -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin> <!-- country borders -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&display=swap">
+  <link rel="preload" href="/static/fonts/jetbrains-mono-latin-700.woff2" as="font" type="font/woff2" crossorigin> <!-- numbers in the bubbles; @font-face is in css/style.css -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/regional.css">
   <script src="js/theme.js"></script>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1"></script>
+  <!-- Google tag (gtag.js). The commands are queued right away, but the library itself is only fetched once the page has loaded and the
+       browser is idle (or after 4 s at most), so it doesn't compete with the globe for the main thread during startup -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
     gtag('config', 'G-3VG8KXHHG1');
+    addEventListener('load', function () {
+      function loadTag() {
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1';
+        document.head.appendChild(s);
+      }
+      if (window.requestIdleCallback) requestIdleCallback(loadTag, { timeout: 4000 }); else setTimeout(loadTag, 2000);
+    });
   </script>
 </head>
 <body>

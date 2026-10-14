@@ -10,9 +10,9 @@
     - Add in-depth info about single commanders (including region filters);
         - [x] CR%
         - [] Spicy impactful cards
-        - [] Proficient pilots
+        - [x] Proficient pilots
         - [x] Recent tournaments
-        - [] Top16's vs Actual wins on top16
+        - [x] Top16's vs Actual wins on top16
         - [] Best region-performing for that deck
         - [x] Evolution over the time period selected?
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
