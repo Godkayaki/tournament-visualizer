@@ -131,7 +131,10 @@
       <li><strong>Time periods:</strong> <em>Group by</em> chooses weeks or months; <em>Auto</em> uses weeks for periods of about four months or less and months for longer ones. A period with no tournaments in the region (or, for conversion, none with a top cut) is a gap in the line, not a zero.</li>
       <li><strong>Meta share</strong> in each period is calculated like in the list: the commander's decks divided by all decks with a listed commander in that region and period, after the Min. entries filter. The cards under the chart give the figure for the whole period.</li>
       <li><strong>Conversion</strong> uses the same rule as the list (only tournaments with a top cut, <em>small sample</em> under 10 decks), so a single week can swing a lot.</li>
+      <li><strong>Decks played</strong> is the number of decks of that commander in the period, and how many of the tournaments it appeared in.</li>
+      <li><strong>Top cut conversion</strong> is the commander's share of the top cut: <code>its decks in the top cut &divide; all decks (with a listed commander, after Min. entries) in the top cut</code>, over the same tournaments. Compare it with the meta share: a higher figure means the commander reaches the top cut more often than its share of the field would suggest. Like conversion, it is dimmed as a <em>small sample</em> under 10 decks.</li>
       <li><strong>Seat win rate</strong> is the share of games that this commander won from each seat: <code>games won from that seat &divide; games it played from that seat</code>, in completed four-player pods. It is built from the same pairings as the tournament window, assigning each game to the commander the player at that seat was using. A fair table would be a little under 25% for every seat, since draws are won by nobody. Counts are small for rare commanders, so check the number of games next to each rate.</li>
+      <li><strong>Top Pilots</strong> lists the players who won a tournament or reached its top cut with this commander, inside the same filters. They are ranked by tournament wins, then top cuts, then best finish. Each pilot shows every tournament they played with the commander (not only the good ones), and each tournament links to the decklist they played there; the pilot's name opens their TopDeck.gg profile. Players are told apart by their TopDeck.gg id, so one person who changes their display name is still one pilot.</li>
       <li>Seat data exists only for tournaments loaded after it was added to the site. Until all the data is rebuilt the seat table can be empty or based on fewer games than the other figures.</li>
     </ul>
 
@@ -140,6 +143,15 @@
       <li><strong>Commander data</strong> has the chart and numbers described above.</li>
       <li><strong>Tournaments</strong> lists every deck of that commander in the tournaments that pass the filters (region, players and period). Each row is one player's finish: place, tournament, date, location and size, player and record. They are sorted by final place, with the winners first; among equal places the tournament with more players goes first (then the most recent). Clicking a row opens that player's decklist on TopDeck.gg in a new tab. The place is the player's position in the standings TopDeck publishes.</li>
       <li><strong>Spicy cards</strong> is not available yet.</li>
+    </ul>
+
+    <h3>The metagame of one tournament</h3>
+    <p>The <em>View metagame</em> button in the tournament window swaps the standings for the commanders of that tournament. For each one:</p>
+    <ul>
+      <li><strong>Entries</strong> are its decks in the tournament, and the percentage next to it is their share of the entries that list a commander. Partners are one commander, whatever order they are listed in.</li>
+      <li><strong>Conversion</strong> is the decks that finished inside the top cut &divide; its decks. A tournament without a top cut shows a dash.</li>
+      <li><strong>Draw rate</strong> is the drawn games &divide; games played by that commander's decks, from their win-loss-draw records. With only a few decks it can jump a lot.</li>
+      <li>Ordered by entries, then conversion.</li>
     </ul>
 
     <h3>Regions</h3>

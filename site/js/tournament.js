@@ -12,6 +12,30 @@ const MEDAL = ['🥇', '🥈', '🥉'];
 
 export const closeModal = () => closePanel($('modal'));
 
+// ---- "View metagame": the commanders of this one tournament ----
+// rows = the standings (best finish first); one entry per commander (partners are one commander). entries = decks, cut = decks that
+// finished inside the top cut (place <= tc; null when the tournament had none), draw = its decks' drawn games / games played.
+// Ordered by entries, then conversion (cut / entries), then draw rate and name so the order never depends on the input.
+export function metagameOf(rows, tc) {
+  const by = new Map();
+  let unlisted = 0;
+  rows.forEach((p, i) => {
+    if (!p.c.length) { unlisted++; return; }
+    const names = [...p.c].sort(); // partners listed in a different order are still the same commander
+    const key = names.join(' / ');
+    let c = by.get(key);
+    if (!c) by.set(key, (c = { key, names, entries: 0, cut: 0, draws: 0, games: 0 }));
+    c.entries++;
+    if (tc && i + 1 <= tc) c.cut++;
+    c.draws += +p.d || 0;
+    c.games += (+p.w || 0) + (+p.l || 0) + (+p.d || 0);
+  });
+  const list = [...by.values()].map((c) => ({ ...c, conversion: tc ? (c.cut / c.entries) * 100 : null, draw: c.games ? (c.draws / c.games) * 100 : null }));
+  list.sort((a, b) => b.entries - a.entries || (b.conversion ?? -1) - (a.conversion ?? -1) || (b.draw ?? -1) - (a.draw ?? -1) || a.key.localeCompare(b.key));
+  return { list, unlisted, listed: rows.length - unlisted };
+}
+
+
 // The draw rate line: this tournament's rate and, in brackets, the average of the tournaments the globe shows right now
 // (same name, players and period filters). The average needs meta.json; without it the line just has no brackets.
 const pct = (v, digits = 1) => `<b>${v.toFixed(digits)}%</b>`; // the number and its % in bold
@@ -29,7 +53,43 @@ function seatText(t) {
   return ` · <span title="Win rate (WR) of each seat: share of the ${games} four-player games of this tournament won from seat 1 to 4 (draws count as games nobody won)">${list}</span>`;
 }
 
+let shown = null; // { t, rows, art } of the tournament on screen, for the metagame view
+
+// Switches the window between the standings and the metagame list
+function setView(meta) {
+  const card = document.querySelector('#modal .card');
+  if (meta && !card.style.minHeight) card.style.minHeight = `${card.offsetHeight}px`; // the window keeps its height when the (shorter) list replaces the standings
+  $('m-list').hidden = meta;
+  $('m-meta-list').hidden = !meta;
+  $('m-view').textContent = meta ? 'View standings' : 'View metagame';
+  $('m-view').setAttribute('aria-pressed', String(meta));
+  $('m-scroll').scrollTop = 0;
+}
+
+function renderMetagame() {
+  const { t, rows, art } = shown;
+  const { list, listed } = metagameOf(rows, t.tc);
+  const rowHtml = (c, i) => {
+    const pics = c.names.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2).map((u) => `<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('');
+    const conv = c.conversion === null ? ['–', 'no top cut'] : [`${c.conversion.toFixed(1)}%`, `${c.cut} of ${c.entries}`];
+    return `<li><div class="entry">
+      <span class="art">${pics}</span>
+      <span class="rank">${i + 1}</span>
+      <span class="who"><b>${esc(c.key)}</b><span>${c.entries} ${c.entries === 1 ? 'entry' : 'entries'} · ${((c.entries / listed) * 100).toFixed(1)}% of the field</span></span>
+      <span class="mstat" title="Decks that made the top cut ÷ decks played"><b>${conv[0]}</b><small>conv. · ${conv[1]}</small></span>
+      <span class="mstat" title="Drawn games ÷ games played by this commander's decks"><b>${c.draw === null ? '–' : `${c.draw.toFixed(1)}%`}</b><small>draw rate</small></span>
+    </div></li>`;
+  };
+  $('m-meta-list').innerHTML = list.length ? list.map(rowHtml).join('') : '<li class="msg">No commanders listed for this tournament.</li>';
+}
+
 export async function openTournament(t) {
+  shown = null;
+  document.querySelector('#modal .card').style.minHeight = '';
+  $('m-view').hidden = true;
+  $('m-meta-list').hidden = true; $('m-meta-list').innerHTML = '';
+  $('m-list').hidden = false;
+  $('m-view').textContent = 'View metagame';
   $('m-title').textContent = t.n;
   $('m-meta').textContent = `${fmtDate(t.d)} · ${place(t)} · ${t.p} players · ${t.sw} Swiss rounds${t.tc ? ` · top ${t.tc}` : ''}`;
   $('m-draw').textContent = 'Draw rate: …';
@@ -40,6 +100,8 @@ export async function openTournament(t) {
   openPanel($('modal'), $('m-scroll'));
   try {
     const [rows, art] = await Promise.all([getRows(t), loadArt()]);
+    shown = { t, rows, art };
+    $('m-view').hidden = !rows.length;
     const imgs = (p) => p.c.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2); // front face only; partners: 2 arts side by side
     // Draw rate: drawn games / games played, from every player's W/L/D (a drawn game is one D for each player at the pod)
     let draws = 0, games = 0;
@@ -66,5 +128,11 @@ export async function openTournament(t) {
 }
 
 export function initTournament() {
+  $('m-view').addEventListener('click', () => {
+    if (!shown) return;
+    const meta = $('m-meta-list').hidden; // currently showing the standings -> switch to the metagame
+    if (meta) renderMetagame();
+    setView(meta);
+  });
   addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 }

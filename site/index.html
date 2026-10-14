@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Daniel Gonzalez">
-  <title>EDHGlobe | cEDH Tournaments &amp; Metagame on a 3D Globe</title>
-  <meta name="description" content="Explore cEDH tournaments on an interactive 3D globe: results, winning decklists and regional metagame data from TopDeck.gg.">
+  <title>EDHGlobe | MTG cEDH Tournaments &amp; Metagame on a 3D Globe</title>
+  <meta name="description" content="Explore Magic: The Gathering (MTG) cEDH tournaments on an interactive 3D globe: results, winning commanders, decklists and regional metagame data from TopDeck.gg.">
   <link rel="canonical" href="https://edhglobe.com/">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#0d1117">
@@ -13,8 +13,8 @@
   <!-- Link previews (Discord, WhatsApp, Telegram, Facebook, LinkedIn, X/Twitter…). The image must be a PNG/JPG, 1200x630. -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="EDHGlobe">
-  <meta property="og:title" content="EDHGlobe | cEDH Tournaments &amp; Metagame on a 3D Globe">
-  <meta property="og:description" content="Explore cEDH tournaments on an interactive 3D globe: results, winning decklists and regional metagame data from TopDeck.gg.">
+  <meta property="og:title" content="EDHGlobe | MTG cEDH Tournaments &amp; Metagame on a 3D Globe">
+  <meta property="og:description" content="Explore Magic: The Gathering (MTG) cEDH tournaments on an interactive 3D globe: results, winning commanders, decklists and regional metagame data from TopDeck.gg.">
   <meta property="og:url" content="https://edhglobe.com/">
   <meta property="og:image" content="https://edhglobe.com/static/og-image.png">
   <meta property="og:image:width" content="1200">
@@ -28,11 +28,12 @@
     "@type": "WebSite",
     "name": "EDHGlobe",
     "url": "https://edhglobe.com/",
-    "description": "Explore cEDH tournaments on an interactive 3D globe: results, winning decklists and regional metagame data from TopDeck.gg.",
+    "description": "Explore Magic: The Gathering (MTG) cEDH tournaments on an interactive 3D globe: results, winning commanders, decklists and regional metagame data from TopDeck.gg.",
     "inLanguage": "en"
   }
   </script>
-  <link rel="icon" href="static/logo.ico" sizes="any">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" href="/static/logo.svg" type="image/svg+xml" sizes="any">
   <link rel="apple-touch-icon" type="image/png" sizes="167x167" href="static/logo-167x167.png"> 
   <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="static/logo-180x180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,7 +58,7 @@
   <div id="stars" aria-hidden="true"><div class="layer" id="stars-far"></div><div class="layer" id="stars-near"></div></div>
   <div id="globe"></div>
   <noscript>
-    <p style="position:fixed;inset:0;z-index:5;display:grid;place-items:center;margin:0;padding:24px;text-align:center;color:#c9d3e8;font:16px/1.6 system-ui,sans-serif">EDHGlobe is an interactive 3D globe of cEDH tournaments, with results, winning decklists and regional metagame data from TopDeck.gg. Please enable JavaScript to use it.</p>
+    <p style="position:fixed;inset:0;z-index:5;display:grid;place-items:center;margin:0;padding:24px;text-align:center;color:#c9d3e8;font:16px/1.6 system-ui,sans-serif">EDHGlobe is an interactive 3D globe of Magic: The Gathering (MTG) cEDH tournaments, with results, winning commanders, decklists and regional metagame data from TopDeck.gg. Enable JavaScript to use it.</p>
   </noscript>
 
   <header id="title">
@@ -130,9 +131,12 @@
         <h2 id="m-title"></h2>
         <p id="m-meta"></p>
         <p id="m-draw"></p>
-        <a id="m-bracket" href="#" target="_blank" rel="noopener">View bracket</a>
+        <div class="m-actions">
+          <a id="m-bracket" href="#" target="_blank" rel="noopener">View bracket</a>
+          <button id="m-view" type="button" aria-pressed="false" hidden>View metagame</button>
+        </div>
       </header>
-      <div class="scroll" id="m-scroll"><ol id="m-list"></ol></div>
+      <div class="scroll" id="m-scroll"><ol id="m-list"></ol><ol id="m-meta-list" hidden></ol></div>
     </div>
   </div>
 

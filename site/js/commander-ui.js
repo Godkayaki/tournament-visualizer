@@ -6,7 +6,7 @@ import { loadSeats, loadEntries } from './data.js';
 import { deckUrl } from './tournament.js';
 import { $, esc, fmtDate, place as placeName, ord } from './utils.js';
 import { colorName, regionLabel, MIN_CONV_DECKS } from './regional.js';
-import { makeBuckets, inRegion, commanderIn, share, conversion, isThin, seatRate, seatOverall } from './commander.js';
+import { makeBuckets, inRegion, commanderIn, share, conversion, cutShare, isThin, seatRate, seatOverall } from './commander.js';
 import { lineChart } from './chart.js';
 
 const COLOR_A = 'var(--accent)';
@@ -82,8 +82,9 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
   const tA = A.total, tB = B?.total;
   const cards = `
     <div class="rg-card2"><i>Meta share</i><b>${pct(share(tA))}</b><small>${tA.decks.toLocaleString()} of ${tA.total.toLocaleString()} decks</small>${B ? versus(nameB, share(tA), share(tB)) : ''}</div>
+    <div class="rg-card2"><i>Decks played</i><b>${tA.decks.toLocaleString()}</b><small>in ${tA.appearances.toLocaleString()} of ${plural(tA.tournaments, 'tournament')}</small>${B ? `<small>${esc(nameB)} ${tB.decks.toLocaleString()}</small>` : ''}</div>
     <div class="rg-card2${isThin(tA) ? ' thin' : ''}"><i>Conversion</i><b>${pct(conversion(tA))}</b><small>${tA.cut.toLocaleString()} of ${tA.elig.toLocaleString()} decks${isThin(tA) && tA.decks ? ' · small sample' : ''}</small>${B ? versus(nameB, conversion(tA), conversion(tB)) : ''}</div>
-    <div class="rg-card2"><i>Decks played</i><b>${tA.decks.toLocaleString()}</b><small>in ${tA.appearances.toLocaleString()} of ${plural(tA.tournaments, 'tournament')}</small>${B ? `<small>${esc(nameB)} ${tB.decks.toLocaleString()}</small>` : ''}</div>`;
+    <div class="rg-card2${isThin(tA) ? ' thin' : ''}"><i>Top cut conversion</i><b>${pct(cutShare(tA))}</b><small>${tA.cut.toLocaleString()} of ${tA.cutAll.toLocaleString()} top cut decks</small>${B ? versus(nameB, cutShare(tA), cutShare(tB)) : ''}</div>`;
 
   const tableRows = A.buckets.map((_, i) => `<tr><th scope="row">${esc(buckets.list[i].title)}</th>${series.map((s) => `<td>${pct(s.values[i])}</td>`).join('')}</tr>`).join('');
   const notes = [];
@@ -160,17 +161,26 @@ function showMoreTournaments() {
   $('rg-tmore').textContent = `Show more (${Math.min(left, PAGE)} of ${left.toLocaleString()} left)`;
 }
 
+// The commander's rows of data/c/<id>.json: 'loading' (the tab redraws itself once they arrive), null (no file yet) or the rows
+function entriesFor(id) {
+  const loaded = entriesLoaded.get(id);
+  if (loaded !== undefined) return loaded;
+  entriesLoaded.set(id, 'loading');
+  loadEntries(id).then((rows) => {
+    entriesLoaded.set(id, rows);
+    const v = getContext().view;
+    if (v.commander === id && (v.dTab === 'tournaments' || v.dTab === 'pilots')) renderCommander();
+  });
+  return 'loading';
+}
+
 function tournamentsTab(c, id) {
   const { meta, view } = c;
   const names = meta.commanders[id];
   const where = regionLabel(meta, view.region);
   const sub = `${names.join(' / ')}: tournaments in ${where}, best finish first.`;
-  const loaded = entriesLoaded.get(id);
-  if (loaded === undefined) {
-    entriesLoaded.set(id, 'loading');
-    loadEntries(id).then((rows) => { entriesLoaded.set(id, rows); const v = getContext().view; if (v.commander === id && v.dTab === 'tournaments') renderCommander(); });
-  }
-  if (loaded === undefined || loaded === 'loading') return { html: '<p class="rg-dnote">Loading tournaments…</p>', sub };
+  const loaded = entriesFor(id);
+  if (loaded === 'loading') return { html: '<p class="rg-dnote">Loading tournaments…</p>', sub };
   if (loaded === null) return { html: "<p class=\"rg-dnote\">The tournament list isn't in this build yet: it appears after the data is rebuilt.</p>", sub };
   tList = sortedEntries(c, loaded);
   tShown = 0;
@@ -182,12 +192,82 @@ function tournamentsTab(c, id) {
   return { html, sub, after: tList.length ? showMoreTournaments : null };
 }
 
+// ---- The "Top Pilots" tab: the players who did best with the commander, each with all their tournaments ----
+const PILOTS_PAGE = 20;
+const PREVIEW = 3;      // tournaments listed before "Show all"
+const profileUrl = (pid) => `https://topdeck.gg/profile/${encodeURIComponent(pid)}`;
+let pList = [];
+let pShown = 0;
+
+// One pilot per TopDeck player id: every deck they played with this commander in the filtered tournaments. Only pilots who reached a top
+// cut (or won) are listed. Ranked by wins, then top cuts, then best finish (the bigger field first), then decks played.
+function pilotsOf({ meta, view, tournaments }, rows) {
+  const byPilot = new Map();
+  for (const e of sortedEntries({ meta, view, tournaments }, rows)) {
+    if (!e.pid) continue;
+    let p = byPilot.get(e.pid);
+    if (!p) byPilot.set(e.pid, (p = { pid: e.pid, name: e.name, nameDate: 0, decks: [], wins: 0, cuts: 0 }));
+    p.decks.push(e);
+    if (e.t.d >= p.nameDate && e.name) { p.name = e.name; p.nameDate = e.t.d; } // the name they use most recently
+    if (e.place === 1) p.wins++;
+    if (e.place === 1 || e.place <= e.t.tc) p.cuts++;
+  }
+  const best = (p) => p.decks[0]; // sortedEntries puts the best finish first
+  return [...byPilot.values()].filter((p) => p.cuts > 0)
+    .sort((a, b) => b.wins - a.wins || b.cuts - a.cuts || best(a).place - best(b).place || best(b).t.p - best(a).t.p || b.decks.length - a.decks.length);
+}
+
+function deckRowHtml(e) {
+  const place = e.place <= 3 ? MEDAL[e.place - 1] : ord(e.place);
+  return `<li><a class="rg-prow" href="${esc(deckUrl(e.t.id, e.pid))}" target="_blank" rel="noopener" title="Open this decklist on TopDeck.gg">
+    <span class="rg-tplace" title="${ord(e.place)} place of ${e.t.p}">${place}<small>of ${e.t.p}</small></span>
+    <span class="rg-twho"><b>${esc(e.t.n)}</b><span>${esc(fmtDate(e.t.d))} · ${esc(placeName(e.t))}</span></span>
+    <small class="rg-prec">${e.w}W ${e.l}L ${e.d}D</small>
+  </a></li>`;
+}
+
+function pilotHtml(p, rank) {
+  const name = esc(p.name || 'Unknown Player');
+  const facts = [p.wins ? plural(p.wins, 'win') : '', plural(p.cuts, 'top cut'), `best ${ord(p.decks[0].place)}`, plural(p.decks.length, 'tournament')].filter(Boolean).join(' · ');
+  const rows = p.decks.map(deckRowHtml);
+  const more = rows.length - PREVIEW;
+  return `<li class="rg-pilot"><div class="rg-phead"><span class="rg-prank">${rank}</span>
+    <span class="rg-pwho"><a href="${esc(profileUrl(p.pid))}" target="_blank" rel="noopener" title="Open the TopDeck.gg profile">${name}</a><small>${facts}</small></span></div>
+    <ul class="rg-plist">${rows.slice(0, PREVIEW).join('')}</ul>
+    ${more > 0 ? `<details class="rg-pmore"><summary>Show ${more} more ${more === 1 ? 'tournament' : 'tournaments'}</summary><ul class="rg-plist">${rows.slice(PREVIEW).join('')}</ul></details>` : ''}</li>`;
+}
+
+function showMorePilots() {
+  const next = pList.slice(pShown, pShown + PILOTS_PAGE);
+  $('rg-plist').insertAdjacentHTML('beforeend', next.map((p, i) => pilotHtml(p, pShown + i + 1)).join(''));
+  pShown += next.length;
+  const left = pList.length - pShown;
+  $('rg-pmoreb').hidden = left <= 0;
+  $('rg-pmoreb').textContent = `Show more (${Math.min(left, PILOTS_PAGE)} of ${left.toLocaleString()} left)`;
+}
+
+function pilotsTab(c, id) {
+  const { meta, view } = c;
+  const where = regionLabel(meta, view.region);
+  const sub = `${meta.commanders[id].join(' / ')}: top pilots in ${where}.`;
+  const loaded = entriesFor(id);
+  if (loaded === 'loading') return { html: '<p class="rg-dnote">Loading pilots…</p>', sub };
+  if (loaded === null) return { html: "<p class=\"rg-dnote\">The pilot list isn't in this build yet: it appears after the data is rebuilt.</p>", sub };
+  pList = pilotsOf(c, loaded);
+  pShown = 0;
+  const html = pList.length
+    ? `<p class="rg-dnote">${plural(pList.length, 'pilot')} who won or reached a top cut with this commander in ${esc(where)} with the filters above. Ranked by tournament wins, then top cuts, then best finish. A pilot's name opens their TopDeck.gg profile; each tournament opens the decklist they played there.</p>
+       <ol id="rg-plist" class="rg-pilots"></ol><button id="rg-pmoreb" type="button" class="rg-tmore" hidden>Show more</button>`
+    : `<p class="rg-dnote">No pilot has reached a top cut with this commander in ${esc(where)} with the filters above.</p>`;
+  return { html, sub, after: pList.length ? showMorePilots : null };
+}
+
 const spicyTab = ({ meta, view }, id) => ({
   html: '<p class="rg-dnote rg-soon">Spicy cards are coming soon.</p>',
   sub: `${meta.commanders[id].join(' / ')}: spicy cards.`,
 });
 
-const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['spicy', 'Spicy cards']];
+const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['pilots', 'Top Pilots'], ['spicy', 'Spicy cards']];
 
 export function renderCommander() {
   const c = getContext();
@@ -195,7 +275,7 @@ export function renderCommander() {
   const id = view.commander;
   if (id === null || !meta.commanders[id]) return;
   const tab = TABS.some(([key]) => key === view.dTab) ? view.dTab : 'data';
-  const body = (tab === 'tournaments' ? tournamentsTab : tab === 'spicy' ? spicyTab : dataTab)(c, id);
+  const body = (tab === 'tournaments' ? tournamentsTab : tab === 'pilots' ? pilotsTab : tab === 'spicy' ? spicyTab : dataTab)(c, id);
   $('rg-sub').textContent = body.sub;
   // The back button, banner and tab bar are built once per commander; changing tab or filter only swaps the panel under them.
   // (Rebuilding everything made the banner art reload and the whole window flicker.)
@@ -246,6 +326,7 @@ export function initCommander(contextFn, onBack) {
     const tab = e.target.closest('[data-tab]');
     if (tab) { getContext().view.dTab = tab.dataset.tab; renderCommander(); return; }
     if (e.target.closest('#rg-tmore')) showMoreTournaments();
+    else if (e.target.closest('#rg-pmoreb')) showMorePilots();
   });
   $('rg-detail').addEventListener('change', (e) => {
     const { view } = getContext();

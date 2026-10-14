@@ -41,10 +41,11 @@ export function makeBuckets(tournaments, months, group, now = Date.now() / 1000)
 // ---- One commander in one region ----
 // `allowed`: Set of commander ids that pass "Min. entries" (null = all). The commander itself always counts, so its share stays a
 // real share even when it is below the filter.
-// Returns { buckets: [{ decks, total, cut, elig }], total: { decks, total, cut, elig, tournaments, appearances }, seat }.
+// Returns { buckets: [{ decks, total, cut, elig, cutAll }], total: { ..., tournaments, appearances }, seat }. cutAll = top cut decks of every
+// commander (that passes `allowed`) in the same tournaments, the denominator of the commander's share of the top cut.
 // seat = { games: [4], wins: [4] } or null when there is no seat data for these tournaments.
 export function commanderIn(meta, seats, tournaments, region, id, allowed, buckets) {
-  const blank = () => ({ decks: 0, total: 0, cut: 0, elig: 0 });
+  const blank = () => ({ decks: 0, total: 0, cut: 0, elig: 0, cutAll: 0 });
   const per = buckets.list.map(blank);
   const all = { ...blank(), tournaments: 0, appearances: 0 };
   const seat = { games: [0, 0, 0, 0], wins: [0, 0, 0, 0] };
@@ -58,7 +59,7 @@ export function commanderIn(meta, seats, tournaments, region, id, allowed, bucke
     for (let i = 5; i < row.length; i += 3) {
       const [cid, n, cut] = [row[i], row[i + 1], row[i + 2]];
       if (allowed && cid !== id && !allowed.has(cid)) continue;
-      b.total += n; all.total += n;
+      b.total += n; all.total += n; b.cutAll += cut; all.cutAll += cut;
       if (cid !== id) continue;
       b.decks += n; all.decks += n; b.cut += cut; all.cut += cut; all.appearances++;
       if (hasCut) { b.elig += n; all.elig += n; }
@@ -76,6 +77,7 @@ export function commanderIn(meta, seats, tournaments, region, id, allowed, bucke
 // ---- Numbers the view shows ----
 export const share = (x) => (x.total ? (x.decks / x.total) * 100 : null);      // meta share, %
 export const conversion = (x) => (x.elig ? (x.cut / x.elig) * 100 : null);      // conversion rate, %
+export const cutShare = (x) => (x.cutAll ? (x.cut / x.cutAll) * 100 : null);    // share of all top cut spots, %
 export const isThin = (x) => x.elig < MIN_CONV_DECKS;                            // too few decks to trust the conversion
 // Seat win rate (%) of seat k (0-3) and overall; null when the commander never sat there
 export const seatRate = (seat, k) => (seat && seat.games[k] ? (seat.wins[k] / seat.games[k]) * 100 : null);

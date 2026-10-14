@@ -138,8 +138,8 @@
 .rg-tabs button:hover { color: var(--text); }
 .rg-tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 .rg-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-/* In a commander's view the window always takes the full height available, so switching tabs (which differ in length) never resizes it */
-#rg-modal.detail .rg-card { height: 100%; }
+/* The window always takes the full height available, so neither searching the list nor switching tabs (which differ in length) resizes it */
+#rg-modal .rg-card { height: 100%; } /* fixed height in the list too, so searching for a commander doesn't shrink the window */
 .rg-panel { padding-top: 4px; }
 .rg-soon { padding: 30px 0; text-align: center; font-size: 15px; }
 /* Tournaments tab: one link per deck, best finish first */
@@ -155,6 +155,22 @@
 .rg-tplayer { flex: none; max-width: 36%; text-align: right; }
 .rg-tplayer b { display: block; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rg-tplayer small { font-size: 12px; color: var(--dim); }
+/* Top Pilots tab: a card per pilot, with their tournaments underneath */
+.rg-pilots { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.rg-pilot { padding: 10px 12px 8px; background: #161b22; border: 1px solid var(--line); border-radius: 10px; }
+.rg-phead { display: flex; align-items: center; gap: 12px; }
+.rg-prank { flex: none; width: 34px; text-align: center; font-size: 15px; font-weight: 700; color: var(--dim); font-variant-numeric: tabular-nums; }
+.rg-pwho { min-width: 0; }
+.rg-pwho a { display: block; font-size: 15px; font-weight: 700; color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rg-pwho a:hover, .rg-pwho a:focus-visible { color: var(--accent); text-decoration: underline; outline: none; }
+.rg-pwho small { display: block; margin-top: 1px; font-size: 12px; color: var(--dim); }
+.rg-plist { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rg-prow { display: flex; align-items: center; gap: 12px; padding: 6px 10px 6px 0; color: var(--text); text-decoration: none; border: 1px solid transparent; border-radius: 8px; transition: border-color .15s, background .15s; }
+.rg-prow:hover, .rg-prow:focus-visible { border-color: var(--accent); background: #0d1117; outline: none; }
+.rg-prec { flex: none; font-size: 12px; color: var(--dim); }
+.rg-pmore { margin-top: 4px; }
+.rg-pmore summary { cursor: pointer; font-size: 12px; color: var(--accent); padding: 4px 0; }
+.rg-pmore .rg-plist { margin-top: 4px; }
 .rg-tmore { display: block; margin: 12px auto 4px; padding: 7px 18px; font: inherit; font-size: 13px; color: var(--accent); cursor: pointer;
   border: 1px solid var(--accent); border-radius: 999px; background: rgba(13, 17, 23, .6); }
 .rg-tmore:hover { background: var(--accent); color: var(--on-accent); }

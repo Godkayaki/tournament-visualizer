@@ -143,12 +143,14 @@ body:has(:is(#modal, #rg-modal):not([hidden])) :is(#filters, #statsbar, #regiona
 .banner h2 { margin: 0 0 2px; font-size: 22px; text-shadow: 0 1px 8px rgba(0, 0, 0, .8); }
 #m-meta, #m-draw { margin: 0; color: #c9d3e8; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
 #m-draw { margin-bottom: 10px; }
-#m-bracket { align-self: flex-start; font-size: 13px; text-decoration: none; padding: 3px 12px;
+.m-actions { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; }
+#m-bracket, #m-view { font: inherit; font-size: 13px; line-height: normal; color: var(--text); text-decoration: none; padding: 3px 12px; cursor: pointer;
   border: 1px solid var(--accent); border-radius: 999px; background: rgba(13, 17, 23, .6); }
-#m-bracket:hover { background: var(--accent); color: var(--on-accent); }
+#m-bracket:hover, #m-view:hover { background: var(--accent); color: var(--on-accent); }
+#m-view[hidden] { display: none; }
 
 .scroll { overflow: auto; padding: 10px 14px 14px; }
-#m-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+#m-list, #m-meta-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .msg { padding: 14px; color: var(--dim); }
 
 .entry { position: relative; isolation: isolate; display: flex; align-items: center; gap: 14px; min-height: 64px;
@@ -163,6 +165,10 @@ body:has(:is(#modal, #rg-modal):not([hidden])) :is(#filters, #statsbar, #regiona
 .who { flex: 1; min-width: 0; }
 .who b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .who span { display: block; font-size: 13px; color: #b9c5de; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mstat { flex: none; min-width: 74px; text-align: right; text-shadow: 0 1px 4px rgba(0, 0, 0, .9); font-variant-numeric: tabular-nums; }
+.mstat b { display: block; font-size: 15px; }
+.mstat small { display: block; font-size: 11px; color: #b9c5de; white-space: nowrap; }
+#m-list[hidden], #m-meta-list[hidden] { display: none; }
 .rec { flex: none; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; text-shadow: 0 1px 4px rgba(0, 0, 0, .9); }
 .rec i { font-style: normal; font-weight: 400; font-size: 11px; color: var(--dim); margin: 0 7px 0 2px; }
 .rec i:last-child { margin-right: 0; }
