@@ -234,13 +234,15 @@ export function initRegional() {
   $('rg-months').addEventListener('change', (e) => { view.months = +e.target.value; recount(); });
   $('rg-entries').addEventListener('change', (e) => { view.minEntries = +e.target.value; recount(); });
   $('rg-sort').addEventListener('change', (e) => { view.sort = e.target.value; rebuild(); });
-  // Colors: W U B R G pick the exact identity; colorless excludes the rest (no deck is both)
+  // Colors: W U B R G pick the exact identity. Colorless ('C') and five-color ('5') are one-click choices of their own: picking either
+  // clears the others, and picking one of W U B R G clears them
   $('rg-colors').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
     const c = b.dataset.c;
     if (view.colors.has(c)) view.colors.delete(c);
-    else { if (c === 'C') view.colors.clear(); else view.colors.delete('C'); view.colors.add(c); }
+    else if (c === 'C' || c === '5') { view.colors.clear(); view.colors.add(c); }
+    else { view.colors.delete('C'); view.colors.delete('5'); view.colors.add(c); }
     rebuild();
   });
   $('rg-colorclear').addEventListener('click', () => { view.colors.clear(); rebuild(); });

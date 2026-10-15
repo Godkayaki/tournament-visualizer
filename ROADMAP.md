@@ -13,15 +13,15 @@
         - [x] Proficient pilots
         - [x] Recent tournaments
         - [x] Top16's vs Actual wins on top16
-        - [] Best region-performing for that deck
         - [x] Evolution over the time period selected?
+        - [x] Add region-performance tab, which should rank countries based on how good that commander performs in it.
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
   - **Shuffleup** -> Still in beta, no API documentation visible, it looks complicated.
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
 - Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
-- Increase performance (not that it's bad, but you can always do better). 
-- Add "View Metagame" on tournament view.
+- Increase performance (not that it's bad, but you can always do better);
+  - ~~Improved font loading (font is now already locally)~~
 
 <details>
 
@@ -58,6 +58,7 @@
 - Add a "featured tournaments", manually featuring a couple of relevant tournaments that might take place in the future (these should be added manually).
 - Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
 - Add another line on the tournament view that shows Draw rate% and Seat Winrate%.
+- Add "View Metagame" on tournament view.
 
 </details>
 

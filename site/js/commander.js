@@ -74,6 +74,29 @@ export function commanderIn(meta, seats, tournaments, region, id, allowed, bucke
   return { buckets: per, total: all, seat: seatSeen ? seat : null };
 }
 
+// ---- One commander in every country ----
+// One pass over the tournaments: for each country (same order as meta.countries) the commander's decks, the decks of every commander that
+// passes `allowed` (for its meta share), and the conversion figures (cut decks / decks in tournaments that had a top cut).
+// Tournaments that couldn't be placed in a country are left out.
+export function commanderByCountry(meta, tournaments, id, allowed) {
+  const per = meta.countries.map(() => ({ decks: 0, total: 0, cut: 0, elig: 0 }));
+  for (const t of tournaments) {
+    const row = meta.t[t.id];
+    if (!row || row[0] < 0 || !per[row[0]]) continue;
+    const c = per[row[0]];
+    const hasCut = row[2] === 1;
+    for (let i = 5; i < row.length; i += 3) {
+      const [cid, n, cut] = [row[i], row[i + 1], row[i + 2]];
+      if (allowed && cid !== id && !allowed.has(cid)) continue;
+      c.total += n;
+      if (cid !== id) continue;
+      c.decks += n; c.cut += cut;
+      if (hasCut) c.elig += n;
+    }
+  }
+  return per;
+}
+
 // ---- Numbers the view shows ----
 export const share = (x) => (x.total ? (x.decks / x.total) * 100 : null);      // meta share, %
 export const conversion = (x) => (x.elig ? (x.cut / x.elig) * 100 : null);      // conversion rate, %

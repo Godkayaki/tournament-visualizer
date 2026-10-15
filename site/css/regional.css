@@ -65,6 +65,7 @@
 .rg-colors [data-c="B"] { --c-ring: #b9a7c5; --c-glow: rgba(185, 167, 197, .4); }
 .rg-colors [data-c="R"] { --c-ring: #ff8a8f; --c-glow: rgba(255, 80, 90, .5); }
 .rg-colors [data-c="G"] { --c-ring: #6fe0a4; --c-glow: rgba(60, 210, 130, .5); }
+.rg-colors [data-c="5"] { --c-ring: #e6c76a; --c-glow: rgba(230, 199, 106, .5); }
 .rg-colors [data-c="C"] { --c-ring: #e8e4e0; --c-glow: rgba(220, 215, 210, .4); }
 .rg-colortext { color: var(--dim); font-size: 13px; }
 #rg-colorclear { padding: 3px 10px; font: inherit; font-size: 12px; color: var(--dim); cursor: pointer; background: transparent; border: 1px solid var(--line); border-radius: 999px; }
@@ -171,6 +172,24 @@
 .rg-pmore { margin-top: 4px; }
 .rg-pmore summary { cursor: pointer; font-size: 12px; color: var(--accent); padding: 4px 0; }
 .rg-pmore .rg-plist { margin-top: 4px; }
+/* Region performance tab: position, flag, country, conversion (+ gap), meta share */
+.rg-clist { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rg-crow { display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 4px; background: #161b22; border: 1px solid var(--line); border-radius: 10px; font-variant-numeric: tabular-nums; }
+.rg-crow.thin { opacity: .65; }
+.rg-cpos { flex: none; width: 38px; text-align: center; font-size: 15px; font-weight: 700; color: var(--dim); }
+.rg-cflag { flex: none; display: grid; place-items: center; width: 34px; height: 22px; }
+.rg-flag { display: block; width: 30px; height: 20px; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .12); }
+.rg-flagcode { font-size: 12px; font-weight: 700; color: var(--dim); }
+.rg-cname { flex: 1; min-width: 0; }
+.rg-cname b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rg-cname small, .rg-cshare small { display: block; font-size: 12px; color: var(--dim); }
+.rg-cconv { flex: none; min-width: 130px; text-align: right; font-size: 13px; color: var(--dim); }
+.rg-cconv b { font-size: 16px; color: var(--text); }
+.rg-cconv .up { color: var(--accent); font-style: normal; font-weight: 600; }
+.rg-cconv .down { font-style: normal; font-weight: 600; }
+.rg-cshare { flex: none; min-width: 82px; text-align: right; }
+.rg-cshare b { font-size: 15px; }
+@media (max-width: 600px) { .rg-cconv { min-width: 0; } .rg-cshare { min-width: 0; } .rg-cname small { display: none; } }
 .rg-tmore { display: block; margin: 12px auto 4px; padding: 7px 18px; font: inherit; font-size: 13px; color: var(--accent); cursor: pointer;
   border: 1px solid var(--accent); border-radius: 999px; background: rgba(13, 17, 23, .6); }
 .rg-tmore:hover { background: var(--accent); color: var(--on-accent); }

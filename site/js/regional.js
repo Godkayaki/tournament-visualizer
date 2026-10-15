@@ -86,9 +86,10 @@ const NAMES = {
 };
 export const colorName = (key) => (key === '' ? 'Colorless' : NAMES[key] || key);
 
-// The selection ('W', 'U', ..., or 'C' for colorless) as a color key, or null when nothing is selected (= no filter)
+// The selection ('W', 'U', ..., 'C' for colorless or '5' for five-color) as a color key, or null when nothing is selected (= no filter)
 export function colorFilter(selection) {
   if (!selection.size) return null;
+  if (selection.has('5')) return COLOR_ORDER; // the five-color button: all of WUBRG in one go
   return selection.has('C') ? '' : [...COLOR_ORDER].filter((c) => selection.has(c)).join('');
 }
 const hasColor = (meta, id, colorKey) => colorKey === null || meta.colors?.[id] === colorKey;

@@ -6,7 +6,7 @@ import { loadSeats, loadEntries } from './data.js';
 import { deckUrl } from './tournament.js';
 import { $, esc, fmtDate, place as placeName, ord } from './utils.js';
 import { colorName, regionLabel, MIN_CONV_DECKS } from './regional.js';
-import { makeBuckets, inRegion, commanderIn, share, conversion, cutShare, isThin, seatRate, seatOverall } from './commander.js';
+import { makeBuckets, inRegion, commanderIn, commanderByCountry, share, conversion, cutShare, isThin, seatRate, seatOverall } from './commander.js';
 import { lineChart } from './chart.js';
 
 const COLOR_A = 'var(--accent)';
@@ -262,12 +262,41 @@ function pilotsTab(c, id) {
   return { html, sub, after: pList.length ? showMorePilots : null };
 }
 
+// ---- The "Region performance" tab: a leaderboard of the countries, best conversion first ----
+const flagHtml = (code) => `<img class="rg-flag" src="static/flags/${esc(code)}.svg" data-code="${esc(code)}" alt="" width="30" height="20" loading="lazy" decoding="async">`;
+
+function regionsTab({ meta, view, tournaments, allowed }, id) {
+  const names = meta.commanders[id];
+  const sub = `${names.join(' / ')}: performance by country.`;
+  const world = commanderIn(meta, null, tournaments, 'world', id, allowed, makeBuckets(tournaments, view.months, 'auto')).total;
+  const base = conversion(world);
+  const rows = commanderByCountry(meta, tournaments, id, allowed)
+    .map((x, i) => ({ ...x, country: meta.countries[i], conv: conversion(x) }))
+    .filter((r) => r.decks > 0 && r.conv !== null);
+  // Countries with enough decks to say something first (best conversion first), the small samples after them, dimmed
+  rows.sort((a, b) => (isThin(a) - isThin(b)) || b.conv - a.conv || b.elig - a.elig || a.country.name.localeCompare(b.country.name));
+  if (!rows.length) return { html: '<p class="rg-dnote">No country has decks of this commander in tournaments with a top cut with the filters above.</p>', sub };
+  const body = rows.map((r, i) => {
+    const gap = base === null ? '' : ` <em class="${r.conv - base >= 0 ? 'up' : 'down'}" title="${PP_TIP}">(${diff(r.conv - base)})</em>`;
+    return `<li class="rg-crow${isThin(r) ? ' thin' : ''}">
+      <span class="rg-cpos">${i + 1}</span>
+      <span class="rg-cflag">${flagHtml(r.country.code)}</span>
+      <span class="rg-cname"><b>${esc(r.country.name)}</b><small>${r.cut.toLocaleString()} of ${r.elig.toLocaleString()} decks${isThin(r) ? ' · small sample' : ''}</small></span>
+      <span class="rg-cconv" title="Decks that made the top cut ÷ decks played, in tournaments with a top cut"><b>${pct(r.conv)}</b>${gap}</span>
+      <span class="rg-cshare" title="Share of the decks with a listed commander in this country"><b>${pct(share(r))}</b><small>meta share</small></span>
+    </li>`;
+  }).join('');
+  const html = `<p class="rg-dnote">${plural(rows.length, 'country', 'countries')} with decks of this commander, best conversion first. In brackets: the difference to its conversion in the whole world (${pct(base)}). Countries with fewer than ${MIN_CONV_DECKS} decks in tournaments with a top cut are listed last, dimmed.</p>
+    <ol class="rg-clist">${body}</ol>`;
+  return { html, sub };
+}
+
 const spicyTab = ({ meta, view }, id) => ({
   html: '<p class="rg-dnote rg-soon">Spicy cards are coming soon.</p>',
   sub: `${meta.commanders[id].join(' / ')}: spicy cards.`,
 });
 
-const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['pilots', 'Top Pilots'], ['spicy', 'Spicy cards']];
+const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['pilots', 'Top Pilots'], ['regions', 'Region performance'], ['spicy', 'Spicy cards']];
 
 export function renderCommander() {
   const c = getContext();
@@ -275,7 +304,7 @@ export function renderCommander() {
   const id = view.commander;
   if (id === null || !meta.commanders[id]) return;
   const tab = TABS.some(([key]) => key === view.dTab) ? view.dTab : 'data';
-  const body = (tab === 'tournaments' ? tournamentsTab : tab === 'pilots' ? pilotsTab : tab === 'spicy' ? spicyTab : dataTab)(c, id);
+  const body = (tab === 'tournaments' ? tournamentsTab : tab === 'pilots' ? pilotsTab : tab === 'regions' ? regionsTab : tab === 'spicy' ? spicyTab : dataTab)(c, id);
   $('rg-sub').textContent = body.sub;
   // The back button, banner and tab bar are built once per commander; changing tab or filter only swaps the panel under them.
   // (Rebuilding everything made the banner art reload and the whole window flicker.)
@@ -321,6 +350,15 @@ export function hideCommander(restore = true) {
 
 export function initCommander(contextFn, onBack) {
   getContext = contextFn;
+  // A flag file that isn't there (static/flags/<CODE>.svg) is swapped for the country code, so the row still says where it is
+  $('rg-detail').addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img.classList?.contains('rg-flag')) return;
+    const code = document.createElement('span');
+    code.className = 'rg-flagcode';
+    code.textContent = img.dataset.code;
+    img.replaceWith(code);
+  }, true);
   $('rg-detail').addEventListener('click', (e) => {
     if (e.target.closest('.rg-back')) return onBack();
     const tab = e.target.closest('[data-tab]');
