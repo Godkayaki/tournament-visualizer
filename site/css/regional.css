@@ -189,7 +189,7 @@
 .rg-cconv .down { font-style: normal; font-weight: 600; }
 .rg-cshare { flex: none; min-width: 82px; text-align: right; }
 .rg-cshare b { font-size: 15px; }
-@media (max-width: 600px) { .rg-cconv { min-width: 0; } .rg-cshare { min-width: 0; } .rg-cname small { display: none; } }
+@media (max-width: 600px) { .rg-cconv { min-width: 0; margin-left: auto; } .rg-cshare { min-width: 0; } .rg-crow .rg-cname { display: none; } }
 /* Spicy cards tab: the card on the left, its numbers and pilots on the right */
 .rg-spicylist { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .rg-spicy { display: flex; gap: 16px; padding: 12px; background: #161b22; border: 1px solid var(--line); border-radius: 10px; }

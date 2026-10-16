@@ -280,7 +280,7 @@ function regionsTab({ meta, view, tournaments, allowed }, id) {
     const gap = base === null ? '' : ` <em class="${r.conv - base >= 0 ? 'up' : 'down'}" title="${PP_TIP}">(${diff(r.conv - base)})</em>`;
     return `<li class="rg-crow${isThin(r) ? ' thin' : ''}">
       <span class="rg-cpos">${i + 1}</span>
-      <span class="rg-cflag">${flagHtml(r.country.code)}</span>
+      <span class="rg-cflag" title="${esc(r.country.name)}">${flagHtml(r.country.code)}</span>
       <span class="rg-cname"><b>${esc(r.country.name)}</b><small>${r.cut.toLocaleString()} of ${r.elig.toLocaleString()} decks${isThin(r) ? ' · small sample' : ''}</small></span>
       <span class="rg-cconv" title="Decks that made the top cut ÷ decks played, in tournaments with a top cut"><b>${pct(r.conv)}</b>${gap}</span>
       <span class="rg-cshare" title="Share of the decks with a listed commander in this country"><b>${pct(share(r))}</b><small>meta share</small></span>

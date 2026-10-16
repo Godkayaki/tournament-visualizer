@@ -3,18 +3,6 @@
 ## To-do list
  
 - Tournaments without coordinates (online events) are skipped right now. My idea is to have a separate list that is somehow accessible (thinking about adding the moon and be clickable lol).
-- Regional metadata;
-    - ~~Based on this I want to add local/regional meta information of what is being played where. This was the original idea, but I needed the rest of the page first. This might be a bit hard to do still, since I've noticed localization issues for the same location, like, for example, calling *Catalunya*, *Catalonia*. These are the same exact location but with different names.~~
-    - ~~Add conversion rate on the regional metagame menu list.~~
-    - ~~Add the avg Draw rate% and Seat Winrate% (with the applied filters)~~
-    - Add in-depth info about single commanders (including region filters);
-        - [x] CR%
-        - [] Spicy impactful cards
-        - [x] Proficient pilots
-        - [x] Recent tournaments
-        - [x] Top16's vs Actual wins on top16
-        - [x] Evolution over the time period selected?
-        - [x] Add region-performance tab, which should rank countries based on how good that commander performs in it.
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
   - **Shuffleup** -> Still in beta, no API documentation visible, it looks complicated.
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
@@ -59,6 +47,18 @@
 - Add a "most recent tournaments" button next to the number of tournaments shown. This should be filtered with the number of players selected and should show the most recent 20 tournaments.
 - Add another line on the tournament view that shows Draw rate% and Seat Winrate%.
 - Add "View Metagame" on tournament view.
+- Regional metadata;
+    - Based on this I want to add local/regional meta information of what is being played where. This was the original idea, but I needed the rest of the page first. This might be a bit hard to do still, since I've noticed localization issues for the same location, like, for example, calling *Catalunya*, *Catalonia*. These are the same exact location but with different names.~~
+    - Add conversion rate on the regional metagame menu list.~~
+    - Add the avg Draw rate% and Seat Winrate% (with the applied filters)~~
+    - Add in-depth info about single commanders (including region filters);
+        - [x] CR%
+        - [x] Spicy impactful cards
+        - [x] Proficient pilots
+        - [x] Recent tournaments
+        - [x] Top16's vs Actual wins on top16
+        - [x] Evolution over the time period selected?
+        - [x] Add region-performance tab, which should rank countries based on how good that commander performs in it.
 
 </details>
 
