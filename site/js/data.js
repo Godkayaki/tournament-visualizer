@@ -1,13 +1,17 @@
 // Everything fetched from the site's own static files (data/ is generated at build time, content/ is edited by hand).
 
+// index.html starts the three startup requests while the page is still parsing (window.__early), so they download in parallel with the
+// scripts instead of after them. Each response is used once; without it (or if it failed) the request is made here as usual.
+const early = (key, url, opts) => { const p = window.__early?.[key]; if (p) { window.__early[key] = null; return p.catch(() => fetch(url, opts)); } return fetch(url, opts); };
+
 // The tournament index: { tournaments, generated, version }
 export const loadTournaments = () =>
-  fetch('data/tournaments.json', { cache: 'no-cache' }) // always revalidate, so a fresh deploy shows up without a hard refresh
+  early('t', 'data/tournaments.json', { cache: 'no-cache' }) // always revalidate, so a fresh deploy shows up without a hard refresh
     .then((r) => r.json());
 
 // Commander name -> art URLs. Fetched once, on first use; a missing file just means no art.
 let artPromise;
-export const loadArt = () => (artPromise ??= fetch('data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
+export const loadArt = () => (artPromise ??= early('a', 'data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
 
 // Regional metagame counts (built by scripts/build-meta.mjs). Fetched the first time the window opens; a failure can be retried.
 let metaPromise;
@@ -33,7 +37,7 @@ const dayTs = (iso) => { // "2026-11-14" -> local midnight, in seconds
 };
 export async function loadFeatured() {
   try {
-    const r = await fetch('content/featured.json', { cache: 'no-cache' }); // always revalidate, so an edit shows up without a hard refresh
+    const r = await early('f', 'content/featured.json', { cache: 'no-cache' }); // always revalidate, so an edit shows up without a hard refresh
     const list = r.ok ? await r.json() : [];
     const now = Date.now() / 1000;
     return (Array.isArray(list) ? list : [])

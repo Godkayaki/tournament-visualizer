@@ -41,6 +41,37 @@
   <link rel="preload" href="/static/fonts/jetbrains-mono-latin-700.woff2" as="font" type="font/woff2" crossorigin> <!-- numbers in the bubbles; @font-face is in css/style.css -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/regional.css">
+  <!-- The module scripts import each other, so the browser only finds each file after loading the one before it. Listing them here lets it
+       fetch all of them at once. Keep this list in step with the imports in js/. -->
+  <link rel="modulepreload" href="js/main.js">
+  <link rel="modulepreload" href="js/utils.js">
+  <link rel="modulepreload" href="js/state.js">
+  <link rel="modulepreload" href="js/data.js">
+  <link rel="modulepreload" href="js/filters.js">
+  <link rel="modulepreload" href="js/meta.js">
+  <link rel="modulepreload" href="js/globe.js">
+  <link rel="modulepreload" href="js/geo.js">
+  <link rel="modulepreload" href="js/list.js">
+  <link rel="modulepreload" href="js/panels.js">
+  <link rel="modulepreload" href="js/tournament.js">
+  <link rel="modulepreload" href="js/preview.js">
+  <link rel="modulepreload" href="js/stars.js">
+  <link rel="modulepreload" href="js/tools.js">
+  <link rel="modulepreload" href="js/regional.js">
+  <link rel="modulepreload" href="js/regional-ui.js">
+  <link rel="modulepreload" href="js/commander-ui.js">
+  <link rel="modulepreload" href="js/commander.js">
+  <link rel="modulepreload" href="js/chart.js">
+  <link rel="preload" href="static/countries.geojson" as="fetch" crossorigin> <!-- country borders (geo.js) -->
+  <!-- Start the data requests now rather than when main.js runs; js/data.js picks them up from window.__early -->
+  <script>
+    window.__early = {};
+    try {
+      __early.t = fetch('data/tournaments.json', { cache: 'no-cache' });
+      __early.a = fetch('data/art.json');
+      __early.f = fetch('content/featured.json', { cache: 'no-cache' });
+    } catch (e) { __early = {}; }
+  </script>
   <script src="js/theme.js"></script>
   <!-- Google tag (gtag.js). The commands are queued right away, but the library itself is only fetched once the page has loaded and the
        browser is idle (or after 4 s at most), so it doesn't compete with the globe for the main thread during startup -->
@@ -69,7 +100,7 @@
   </noscript>
 
   <header id="title">
-    <img src="static/logo.svg" alt="">
+    <img src="static/logo.svg" alt="" fetchpriority="high" decoding="async">
     <div>
       <h1>EDHGlobe</h1>
       <p>Drag to rotate, scroll to zoom.</p>
