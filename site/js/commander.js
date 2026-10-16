@@ -97,6 +97,56 @@ export function commanderByCountry(meta, tournaments, id, allowed) {
   return per;
 }
 
+// ---- Spicy cards ----
+// A card is "spicy" when few lists of the commander play it but the lists that do convert much better than the commander's average.
+//   rare:      played in at most MAX_RATE of the lists with a card list, and under a third of the average play rate of a card in
+//              those lists (spicy.avg), and in at least MIN_DECKS decks
+//   converts:  at least MIN_LIFT percentage points above the commander's own conversion, with at least MIN_ELIG decks in tournaments
+//              with a top cut, and its conversion is still above the commander's average after allowing for the small sample
+//              (the lower end of its 95% confidence interval, Wilson's, is higher than the commander's conversion)
+// They are ranked by how far that lower end is above the commander's conversion, so 7 of 7 beats 3 of 5 and a lucky 2 of 3 can't show up. `entries` are the commander's decks that pass the window's filters ({ idx, place, pid, name, t }),
+// `spicy` is data/s/<id>.json.
+export const SPICY = { MIN_DECKS: 3, MIN_ELIG: 5, MIN_LIFT: 5, MAX_RATE: 0.25, Z: 1.645, SHOW: 5, MIN_LISTS: 20 };
+
+// Lower end (0-1) of the Wilson score interval for k successes in n tries, z standard deviations
+const wilsonLow = (k, n, z) => { const p = k / n, z2 = z * z; return (p + z2 / (2 * n) - z * Math.sqrt((p * (1 - p)) / n + z2 / (4 * n * n))) / (1 + z2 / n); };
+
+export function spicyCards(entries, spicy) {
+  const miss = new Set(spicy.miss);
+  const decks = new Map(); // row of data/c/<id>.json -> entry, only decks that have a card list
+  for (const e of entries) if (!miss.has(e.idx)) decks.set(e.idx, e);
+  const lists = decks.size;
+  let elig = 0, cut = 0;
+  for (const e of decks.values()) if (e.t.tc > 0) { elig++; if (e.place <= e.t.tc) cut++; }
+  const base = elig ? (cut / elig) * 100 : null;
+  const maxRate = Math.min(SPICY.MAX_RATE, spicy.avg / 3);
+  const out = { lists, base, maxRate, cards: [] };
+  if (lists < SPICY.MIN_LISTS || base === null) return out;
+  for (const [name, rows] of spicy.cards) {
+    const mine = rows.map((r) => decks.get(r)).filter(Boolean);
+    if (mine.length < SPICY.MIN_DECKS || mine.length / lists > maxRate) continue;
+    const e = mine.filter((d) => d.t.tc > 0);
+    if (e.length < SPICY.MIN_ELIG) continue;
+    const c = e.filter((d) => d.place <= d.t.tc).length;
+    const conv = (c / e.length) * 100;
+    if (conv - base < SPICY.MIN_LIFT) continue;
+    const score = wilsonLow(c, e.length, SPICY.Z) * 100 - base;
+    if (score <= 0) continue; // could just be luck
+    // best finish of each pilot (the bigger tournament first on a tie)
+    const best = new Map();
+    for (const d of mine) {
+      const key = d.pid || d.name;
+      const b = best.get(key);
+      if (!b || d.place < b.place || (d.place === b.place && d.t.p > b.t.p)) best.set(key, d);
+    }
+    const pilots = [...best.values()].sort((a, b) => a.place - b.place || b.t.p - a.t.p);
+    out.cards.push({ name, decks: mine.length, rate: (mine.length / lists) * 100, elig: e.length, cut: c, conv, lift: conv - base, score, pilots });
+  }
+  out.cards.sort((a, b) => b.score - a.score || b.decks - a.decks || a.name.localeCompare(b.name));
+  out.cards = out.cards.slice(0, SPICY.SHOW);
+  return out;
+}
+
 // ---- Numbers the view shows ----
 export const share = (x) => (x.total ? (x.decks / x.total) * 100 : null);      // meta share, %
 export const conversion = (x) => (x.elig ? (x.cut / x.elig) * 100 : null);      // conversion rate, %

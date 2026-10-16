@@ -56,6 +56,14 @@ export const loadEntries = (id) => {
   return entriesCache.get(id);
 };
 
+// Per-commander card lists for the Spicy cards tab (data/s/<id>.json, built by scripts/build-meta.mjs from the decklists). null when the
+// commander has none (too few decks with a card list, or the data hasn't been rebuilt since card lists were added).
+const spicyCache = new Map();
+export const loadSpicy = (id) => {
+  if (!spicyCache.has(id)) spicyCache.set(id, fetch(`data/s/${id}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+  return spicyCache.get(id);
+};
+
 // Per-commander seat results (built by scripts/build-meta.mjs from the rounds). Only the commander view needs it, so it is fetched
 // on first use. null when the file doesn't exist yet (the data hasn't been fully rebuilt since seats were added).
 let seatsPromise;

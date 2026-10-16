@@ -2,11 +2,11 @@
 // of its meta share (or conversion) over time for the chosen region and an optional second one, and its numbers: conversion, seat
 // win rates... It uses the window's own filters (region, compare with, players, min. entries, period), so everything stays in step.
 // regional-ui.js owns the state and hands it over through the function given to initCommander().
-import { loadSeats, loadEntries } from './data.js';
+import { loadSeats, loadEntries, loadSpicy } from './data.js';
 import { deckUrl } from './tournament.js';
 import { $, esc, fmtDate, place as placeName, ord } from './utils.js';
 import { colorName, regionLabel, MIN_CONV_DECKS } from './regional.js';
-import { makeBuckets, inRegion, commanderIn, commanderByCountry, share, conversion, cutShare, isThin, seatRate, seatOverall } from './commander.js';
+import { makeBuckets, inRegion, commanderIn, commanderByCountry, spicyCards, SPICY, share, conversion, cutShare, isThin, seatRate, seatOverall } from './commander.js';
 import { lineChart } from './chart.js';
 
 const COLOR_A = 'var(--accent)';
@@ -134,12 +134,12 @@ let tShown = 0;
 function sortedEntries({ meta, view, tournaments }, rows) {
   const byId = new Map(tournaments.map((t) => [t.id, t]));
   const out = [];
-  for (const [tid, place, pid, name, w, l, d] of rows) {
+  rows.forEach(([tid, place, pid, name, w, l, d], idx) => { // idx = the row's position in data/c/<id>.json, which data/s/<id>.json refers to
     const t = byId.get(tid);
     const row = t && meta.t[tid];
-    if (!row || !inRegion(meta, view.region, row[0])) continue;
-    out.push({ t, place, pid, name, w, l, d });
-  }
+    if (!row || !inRegion(meta, view.region, row[0])) return;
+    out.push({ t, place, pid, name, w, l, d, idx });
+  });
   return out.sort((a, b) => a.place - b.place || b.t.p - a.t.p || b.t.d - a.t.d);
 }
 
@@ -169,7 +169,7 @@ function entriesFor(id) {
   loadEntries(id).then((rows) => {
     entriesLoaded.set(id, rows);
     const v = getContext().view;
-    if (v.commander === id && (v.dTab === 'tournaments' || v.dTab === 'pilots')) renderCommander();
+    if (v.commander === id && (v.dTab === 'tournaments' || v.dTab === 'pilots' || v.dTab === 'spicy')) renderCommander();
   });
   return 'loading';
 }
@@ -291,10 +291,52 @@ function regionsTab({ meta, view, tournaments, allowed }, id) {
   return { html, sub };
 }
 
-const spicyTab = ({ meta, view }, id) => ({
-  html: '<p class="rg-dnote rg-soon">Spicy cards are coming soon.</p>',
-  sub: `${meta.commanders[id].join(' / ')}: spicy cards.`,
-});
+// ---- The "Spicy cards" tab: cards that few lists play but that convert far better than the deck ----
+const spicyLoaded = new Map(); // commander id -> data of data/s/<id>.json, null (no file) or 'loading'
+function spicyFor(id) {
+  const have = spicyLoaded.get(id);
+  if (have !== undefined) return have;
+  spicyLoaded.set(id, 'loading');
+  loadSpicy(id).then((data) => {
+    spicyLoaded.set(id, data);
+    const v = getContext().view;
+    if (v.commander === id && v.dTab === 'spicy') renderCommander();
+  });
+  return 'loading';
+}
+const cardImage = (name) => `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name.split(' // ')[0])}&format=image&version=normal`;
+const scryfallPage = (name) => `https://scryfall.com/search?q=${encodeURIComponent(`!"${name.split(' // ')[0]}"`)}`;
+
+function spicyHtml(card, base) {
+  const pilots = card.pilots.slice(0, 3).map((p) => `<li><a href="${esc(deckUrl(p.t.id, p.pid))}" target="_blank" rel="noopener" title="Open this decklist on TopDeck.gg"><b>${esc(p.name || 'Unknown Player')}</b> <span>${p.place <= 3 ? MEDAL[p.place - 1] : ord(p.place)} · ${esc(p.t.n)}</span></a></li>`).join('');
+  const more = card.pilots.length - 3;
+  return `<li class="rg-spicy">
+    <a class="rg-scard" href="${esc(scryfallPage(card.name))}" target="_blank" rel="noopener" title="Open ${esc(card.name)} on Scryfall"><img src="${esc(cardImage(card.name))}" alt="${esc(card.name)}" width="146" height="204" loading="lazy" decoding="async"></a>
+    <div class="rg-sbody">
+      <h4>${esc(card.name)}</h4>
+      <p class="rg-sstat"><i>Play rate</i><b>${pct(card.rate)}</b><small>${plural(card.decks, 'deck')}</small></p>
+      <p class="rg-sstat"><i>Conversion</i><b>${pct(card.conv)}</b> <em class="up" title="${PP_TIP}">(${diff(card.lift)})</em><small>${card.cut} of ${card.elig} decks · deck average ${pct(base)}</small></p>
+      <div class="rg-spilots"><i>${card.pilots.length === 1 ? 'Pilot' : 'Pilots'}</i><ul>${pilots}</ul>${more > 0 ? `<small>and ${more} more</small>` : ''}</div>
+    </div>
+  </li>`;
+}
+
+function spicyTab(c, id) {
+  const { meta, view } = c;
+  const where = regionLabel(meta, view.region);
+  const sub = `${meta.commanders[id].join(' / ')}: spicy cards in ${where}.`;
+  const entries = entriesFor(id);
+  const spicy = spicyFor(id);
+  if (entries === 'loading' || spicy === 'loading') return { html: '<p class="rg-dnote">Looking for spicy cards…</p>', sub };
+  if (entries === null || spicy === null) return { html: "<p class=\"rg-dnote\">Card data isn't available for this commander yet: it needs decklists from at least 20 decks, and it appears after the data is rebuilt.</p>", sub };
+  const r = spicyCards(sortedEntries(c, entries), spicy);
+  const rule = `Rarely played: in under ${Math.round(r.maxRate * 100)}% of the lists (a third of the average card's play rate) and at least ${SPICY.MIN_DECKS} decks. Spicy: converts at least ${SPICY.MIN_LIFT} pp better than the commander's average (${pct(r.base)}), in at least ${SPICY.MIN_ELIG} decks from tournaments with a top cut, and not by luck alone.`;
+  let html;
+  if (r.lists < SPICY.MIN_LISTS) html = `<p class="rg-dnote">Only ${plural(r.lists, 'deck')} with a card list in ${esc(where)} with the filters above; at least ${SPICY.MIN_LISTS} are needed.</p>`;
+  else if (!r.cards.length) html = `<p class="rg-dnote">No card stands out in ${esc(where)} with the filters above (${plural(r.lists, 'deck')} with a card list). ${esc(rule)}</p>`;
+  else html = `<p class="rg-dnote">${r.cards.length === 1 ? 'The spiciest card' : `The ${r.cards.length} spiciest cards`} in ${plural(r.lists, 'list')} in ${esc(where)}: ${esc(rule)} Ranked by how far above average they convert once the small number of decks is taken into account.</p><ol class="rg-spicylist">${r.cards.map((card) => spicyHtml(card, r.base)).join('')}</ol>`;
+  return { html, sub };
+}
 
 const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['pilots', 'Top Pilots'], ['regions', 'Region performance'], ['spicy', 'Spicy cards']];
 

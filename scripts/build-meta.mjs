@@ -36,6 +36,14 @@
 //   [[tournament id, place (1 = winner), player id, player name, wins, losses, draws], ...]   (the place is the row in the standings)
 // The folder is wiped and rewritten on every build, because the commander indexes change from build to build.
 //
+// Spicy cards: data/s/<commanderIndex>.json holds what the Spicy cards tab needs, built from the card lists in .cache/decks/ (see decks.mjs):
+//   { v: 1, m: decks with a card list, avg: average play rate of a card in a list (0-1), miss: [row of c/<id>.json without a card list, ...],
+//     cards: [[card name, [row of c/<id>.json that plays it, ...]], ...] }
+// The rows are positions in data/c/<commanderIndex>.json, so the browser can apply its own filters (period, players, region) to them.
+// Only the cards that could be "spicy" are listed (at least SPICY_MIN_DECKS decks, in at most SPICY_MAX_RATE of the lists); a card that is
+// in most lists only counts towards `avg`. Commanders with fewer than SPICY_MIN_LISTS card lists get no file. The folder is rewritten
+// on every build, like data/c/.
+//
 // Conversion = decks that made the top cut / decks played, counting only tournaments that had a top cut (hasTopCut = 1). A deck
 // is in the top cut when its player is among the first `topCut` rows of the standings (kept in final-placement order by
 // fetch-data.mjs). In a tournament without a top cut every topCutDecks is 0 and the front-end leaves its decks out of the rate.
@@ -44,7 +52,8 @@ import { readFile, writeFile, appendFile, mkdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
-const SCHEMA = 6; // bump when the layout or the counting rules change, so cached files get rebuilt
+const DECKS = fileURLToPath(new URL('../.cache/decks/', import.meta.url)); // raw card lists written by fetch-data.mjs
+const SCHEMA = 7; // bump when the layout or the counting rules change, so cached files get rebuilt
 const NEAREST_KM = 50;
 const SCRYFALL_URL = process.env.SCRYFALL_URL || 'https://api.scryfall.com';
 const SCRYFALL_HEADERS = { 'User-Agent': 'cedh-globe/1.0 (https://github.com/Godkayaki/tournament-visualizer)', Accept: 'application/json', 'Content-Type': 'application/json' };
@@ -177,6 +186,9 @@ const idOf = (names) => {
 const t = {};
 const seatsOut = {};
 const entriesOut = new Map(); // commander id -> rows of data/c/<id>.json
+const listsOut = new Map();   // commander id -> { m, miss: [rows], cards: Map(name -> [rows]) }, for data/s/<id>.json
+const SPICY_MIN_DECKS = 3, SPICY_MAX_RATE = 0.35, SPICY_MIN_LISTS = 20;
+let withLists = 0;
 let seatTournaments = 0;
 let decks = 0, noCommander = 0, noStandings = 0, withCut = 0, cutDecks = 0;
 const unplaced = [];
@@ -185,6 +197,9 @@ for (const tour of index.tournaments) {
   try { rows = JSON.parse(await readFile(`${OUT}t/${tour.f}.json`, 'utf8')); }
   catch { noStandings++; continue; }
 
+  let lists = null; // this tournament's card lists: { n: [names], d: { player id: [indexes] } }
+  try { lists = JSON.parse(await readFile(`${DECKS}${tour.f}.json`, 'utf8')); } catch { /* none for this one */ }
+  if (lists) withLists++;
   const counts = new Map(); // commander id -> [decks, top cut decks]
   const seatCounts = new Map(); // commander id -> [games at seat 1..4, wins at seat 1..4]
   const cutSize = tour.tc > 0 ? tour.tc : 0;
@@ -194,7 +209,14 @@ for (const tour of index.tournaments) {
     const names = [...new Set((p.c || []).map((s) => String(s).trim()).filter(Boolean))].sort(); // sorted: A/B and B/A are the same deck
     if (!names.length) { unknown++; continue; }
     const id = idOf(names);
-    (entriesOut.get(id) || entriesOut.set(id, []).get(id)).push([tour.id, place + 1, p.i ?? '', p.n ?? '', +p.w || 0, +p.l || 0, +p.d || 0]);
+    const rowsOf = entriesOut.get(id) || entriesOut.set(id, []).get(id);
+    rowsOf.push([tour.id, place + 1, p.i ?? '', p.n ?? '', +p.w || 0, +p.l || 0, +p.d || 0]);
+    const acc = listsOut.get(id) || listsOut.set(id, { m: 0, miss: [], cards: new Map() }).get(id);
+    const mine = lists?.d?.[p.i];
+    if (mine) {
+      acc.m++;
+      for (const ix of mine) { const name = lists.n[ix]; const at = acc.cards.get(name); if (at) at.push(rowsOf.length - 1); else acc.cards.set(name, [rowsOf.length - 1]); }
+    } else acc.miss.push(rowsOf.length - 1);
     if (Array.isArray(p.q) && p.q.length === 8) {
       const s = seatCounts.get(id) || seatCounts.set(id, [0, 0, 0, 0, 0, 0, 0, 0]).get(id);
       p.q.forEach((v, i) => { s[i] += +v || 0; });
@@ -269,6 +291,19 @@ const colors = commanders.map((names) => { // a pair is the union of its command
 const meta = { schema: SCHEMA, generated: index.generated, ...(features ? {} : { bordersMissing: true }), ...(colorsFailed ? { colorsPending: true } : {}), countries, commanders, colors, t };
 await writeFile(OUT + 'meta.json', JSON.stringify(meta));
 await rm(OUT + 'c/', { recursive: true, force: true });
+await rm(OUT + 's/', { recursive: true, force: true });
+await mkdir(OUT + 's/', { recursive: true });
+let spicyFiles = 0, spicyBytes = 0;
+for (const [id, a] of listsOut) {
+  if (a.m < SPICY_MIN_LISTS) continue;
+  // average play rate of a card slot: sum(p^2) / sum(p) over every card, i.e. the play rate of the card an average list card is
+  let sp = 0, sp2 = 0;
+  for (const rows of a.cards.values()) { const p = rows.length / a.m; sp += p; sp2 += p * p; }
+  const cards = [...a.cards].filter(([, rows]) => rows.length >= SPICY_MIN_DECKS && rows.length / a.m <= SPICY_MAX_RATE).sort((x, y) => y[1].length - x[1].length || x[0].localeCompare(y[0]));
+  const text = JSON.stringify({ v: 1, m: a.m, avg: +(sp ? sp2 / sp : 0).toFixed(4), miss: a.miss, cards });
+  await writeFile(`${OUT}s/${id}.json`, text);
+  spicyFiles++; spicyBytes += text.length;
+}
 await mkdir(OUT + 'c/', { recursive: true });
 for (const [id, list] of entriesOut) await writeFile(`${OUT}c/${id}.json`, JSON.stringify(list));
 if (seatTournaments) await writeFile(OUT + 'seats.json', JSON.stringify({ schema: 1, generated: index.generated, t: seatsOut }));
@@ -276,6 +311,7 @@ if (seatTournaments) await writeFile(OUT + 'seats.json', JSON.stringify({ schema
 const tournaments = Object.keys(t).length;
 console.log(`Wrote meta.json: ${tournaments} tournaments, ${decks} decks, ${commanders.length} commanders, ${countries.length} countries`);
 console.log(`Entries: ${entriesOut.size} commander files in data/c/`);
+console.log(`Spicy cards: ${withLists} tournaments with card lists, ${spicyFiles} commander files in data/s/ (${(spicyBytes / 1e6).toFixed(1)} MB)${withLists ? '' : ' (none yet: they appear after a full fetch-data run)'}`);
 console.log(`Seats: ${seatTournaments} tournaments with per-commander seat data${seatTournaments ? '' : ' (none yet: they appear after a full fetch-data run)'}`);
 console.log(`${withCut} of ${tournaments} tournaments have a top cut (${cutDecks} decks in it)`);
 console.log(`${colors.filter((c) => c === null).length} commanders without color identity${colorsFailed ? ` (${colorsFailed} lookups failed, will retry)` : ''}`);
@@ -287,6 +323,7 @@ await summary([
   `| Tournaments / decks | ${tournaments} / ${decks} |`,
   `| Commanders (and partner pairs) | ${commanders.length} |`,
   `| Tournaments with seat data | ${seatTournaments} |`,
+  `| Tournaments with card lists / commander files for Spicy cards | ${withLists} / ${spicyFiles} |`,
   `| Countries | ${countries.length} |`,
   `| Tournaments with a top cut / decks in it | ${withCut} / ${cutDecks} |`,
   `| Commanders without color data | ${colors.filter((c) => c === null).length} |`,

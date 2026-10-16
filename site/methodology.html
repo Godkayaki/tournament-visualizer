@@ -143,8 +143,16 @@
     <ul>
       <li><strong>Commander data</strong> has the chart and numbers described above.</li>
       <li><strong>Tournaments</strong> lists every deck of that commander in the tournaments that pass the filters (region, players and period). Each row is one player's finish: place, tournament, date, location and size, player and record. They are sorted by final place, with the winners first; among equal places the tournament with more players goes first (then the most recent). Clicking a row opens that player's decklist on TopDeck.gg in a new tab. The place is the player's position in the standings TopDeck publishes.</li>
-      <li><strong>Spicy cards</strong> is not available yet.</li>
+      <li><strong>Spicy cards</strong> shows up to 5 cards that few decks of this commander play but that convert a lot better than the commander's average. See below.</li>
     </ul>
+
+    <h3>Spicy cards</h3>
+    <p>Card lists come from TopDeck, which only shows them once a tournament has ended or the organizer made decks public, so decks without a list are ignored here. Basic lands are not counted. A card is <em>spicy</em> for a commander when it is:</p>
+    <ul>
+      <li><strong>Rarely played:</strong> in at most a quarter of the commander's decks with a list (and at most a third of the average card's play rate), and in at least 3 decks.</li>
+      <li><strong>Converting well:</strong> among its decks from tournaments with a top cut (at least 5), the conversion is at least 5 pp above the commander's own, and still above it after allowing for a small sample (the lower end of a 95% Wilson interval). That is why 7 of 7 can rank above 3 of 5.</li>
+    </ul>
+    <p>Cards are ranked by how far that lower end is above the commander's conversion. Conversion (reaching the top cut) is used instead of win rate because it is what the rest of the site measures and is less noisy than game records. The view needs at least 20 decks with a list, and may show fewer than 5 cards, or none, when nothing qualifies. The pilots shown are the ones who played the card, with their best finish. Card images are loaded from Scryfall when you open the tab.</p>
 
     <h3>The metagame of one tournament</h3>
     <p>The <em>View metagame</em> button in the tournament window swaps the standings for the commanders of that tournament. For each one:</p>

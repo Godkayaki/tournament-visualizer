@@ -11,6 +11,7 @@
 import { mkdir, writeFile, readFile, readdir, appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { seatStats, playerSeats } from './seats.mjs';
+import { encodeDecks } from './decks.mjs';
 
 const KEY = process.env.TOPDECK_API_KEY;
 if (!KEY) { console.error('Missing TOPDECK_API_KEY'); process.exit(1); }
@@ -20,6 +21,7 @@ const START = Math.floor(Date.parse(process.env.START_DATE || '2023-01-01') / 10
 const NOW = Math.floor(Date.now() / 1000);
 const STEP = 14 * 86400; // 14-day windows keep each response small
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
+const DECKS = fileURLToPath(new URL('../.cache/decks/', import.meta.url)); // raw card lists (see decks.mjs); not under site/, so never published
 
 // Repo version-number file -> tournaments.json, so the front-end can show it without an extra request.
 // Missing file (someone deleted it) degrades to 'unknown' rather than crashing the build.
@@ -114,6 +116,7 @@ if (!process.env.FULL) {
 }
 
 await mkdir(OUT + 't/', { recursive: true });
+await mkdir(DECKS, { recursive: true });
 
 if (!skipFetch) {
   const seen = new Map();
@@ -126,7 +129,7 @@ if (!skipFetch) {
   }
 
   const byId = new Map(previous.map((t) => [t.id, t]));
-  let noLocation = 0, noStandings = 0, withSeats = 0;
+  let noLocation = 0, noStandings = 0, withSeats = 0, withDecks = 0;
   const recentSkips = []; // what we dropped from the last few days, so a "missing" tournament can be explained from the log
   const skip = (t, why) => {
     if (t.startDate >= NOW - 5 * 86400) recentSkips.push(`${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${t.tournamentName}  (${why})`);
@@ -147,6 +150,8 @@ if (!skipFetch) {
       p: t.standings.length, sw: t.swissNum || 0, tc: t.topCut || 0,
       ...(seat ? { seat } : {}),
     });
+    const decks = encodeDecks(t.standings); // card lists for the Spicy cards tab (null when the API gave none)
+    if (decks) { withDecks++; await writeFile(`${DECKS}${f}.json`, JSON.stringify(decks)); }
     // Standings are kept in the order the API returns them (assumed to be final placement).
     await writeFile(`${OUT}t/${f}.json`, JSON.stringify(
       t.standings.map((p) => ({ n: p.name, i: p.id, c: commanders(p), w: p.wins || 0, d: p.draws || 0, l: p.losses || 0, ...(perPlayer?.has(p.id) ? { q: perPlayer.get(p.id) } : {}) }))
@@ -158,6 +163,7 @@ if (!skipFetch) {
   console.log(`Wrote ${index.length} located tournaments (of ${seen.size} fetched)`);
   console.log(`Skipped: ${noLocation} without coordinates, ${noStandings} without standings`);
   console.log(`Seat results: ${withSeats} of the tournaments fetched this run have them${withSeats ? '' : '  <-- none: check that the API returned `rounds` for the tables'}`);
+  console.log(`Card lists: ${withDecks} of the tournaments fetched this run have them${withDecks ? '' : '  <-- none: check that the API returned `deckObj` (it comes with the `decklist` column)'}`);
   const newest = [...seen.values()].sort((a, b) => b.startDate - a.startDate).slice(0, 5);
   console.log('Newest tournaments returned by the API:');
   for (const t of newest) console.log(`  ${new Date(t.startDate * 1000).toISOString().slice(0, 16).replace('T', ' ')}Z  ${t.tournamentName}`);
@@ -174,6 +180,7 @@ if (!skipFetch) {
     `| Fetched / now in the index | ${seen.size} / ${index.length} |`,
     `| Skipped | ${noLocation} without coordinates, ${noStandings} without standings |`,
     `| With seat results (this run) | ${withSeats} |`,
+    `| With card lists (this run) | ${withDecks} |`,
     `| Newest returned by the API | ${newest[0] ? `${iso(newest[0].startDate)} ${newest[0].tournamentName}` : 'none'} |`,
     `| Newest in the index | ${index[0] ? `${iso(index[0].d)} ${index[0].n}` : 'none'} |`,
     '',
