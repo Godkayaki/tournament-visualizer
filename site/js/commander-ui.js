@@ -95,7 +95,7 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
   const html = `
     <div class="rg-dtools">
       <label>Chart <select id="rg-dmetric"><option value="share">Meta share</option><option value="conv">Conversion rate</option></select></label>
-      <label>Group by <select id="rg-dgroup"><option value="auto">Auto</option><option value="week">Weeks</option><option value="month">Months</option></select></label>
+      <label>Group by <select id="rg-dgroup"><option value="month">Months</option><option value="week">Weeks</option></select></label>
     </div>
     <p class="rg-legend"><i class="a"></i>${esc(nameA)}${B ? ` <i class="b"></i>${esc(nameB)}` : ''}</p>
     <div class="rg-chart" id="rg-chart"></div>
@@ -311,7 +311,7 @@ function spicyHtml(card, base) {
   const pilots = card.pilots.slice(0, 3).map((p) => `<li><a href="${esc(deckUrl(p.t.id, p.pid))}" target="_blank" rel="noopener" title="Open this decklist on TopDeck.gg"><b>${esc(p.name || 'Unknown Player')}</b> <span>${p.place <= 3 ? MEDAL[p.place - 1] : ord(p.place)} · ${esc(p.t.n)}</span></a></li>`).join('');
   const more = card.pilots.length - 3;
   return `<li class="rg-spicy">
-    <a class="rg-scard" href="${esc(scryfallPage(card.name))}" target="_blank" rel="noopener" title="Open ${esc(card.name)} on Scryfall"><img src="${esc(cardImage(card.name))}" alt="${esc(card.name)}" width="146" height="204" loading="lazy" decoding="async"></a>
+    <a class="rg-scard" href="${esc(scryfallPage(card.name))}" target="_blank" rel="noopener" aria-label="${esc(card.name)} on Scryfall"><img src="${esc(cardImage(card.name))}" alt="${esc(card.name)}" width="146" height="204" loading="lazy" decoding="async"></a>
     <div class="rg-sbody">
       <h4>${esc(card.name)}</h4>
       <p class="rg-sstat"><i>Play rate</i><b>${pct(card.rate)}</b><small>${plural(card.decks, 'deck')}</small></p>
@@ -401,6 +401,46 @@ export function initCommander(contextFn, onBack) {
     code.textContent = img.dataset.code;
     img.replaceWith(code);
   }, true);
+  // Spicy cards: after a short pause a bigger copy of the card fades in beside it (mouse only; phones can tap through to Scryfall).
+  // The new image is loaded first, so the previous card is never shown while the next one is on its way.
+  if (matchMedia('(hover: hover)').matches) {
+    const big = document.createElement('img');
+    big.className = 'rg-bigcard';
+    big.alt = '';
+    document.body.appendChild(big);
+    const W = 300, H = 418, GAP = 14, DELAY = 250;
+    let current = null, timer = 0;
+    const place = (card) => {
+      const r = card.getBoundingClientRect();
+      const left = r.right + GAP + W <= innerWidth ? r.right + GAP : Math.max(8, r.left - GAP - W); // beside the card, on whichever side has room
+      big.style.left = `${left}px`;
+      big.style.top = `${Math.min(Math.max(8, r.top + r.height / 2 - H / 2), Math.max(8, innerHeight - H - 8))}px`;
+    };
+    const hide = () => { clearTimeout(timer); current = null; big.classList.remove('on'); };
+    const show = (card, url) => {
+      const img = new Image();
+      img.src = url;
+      (img.decode ? img.decode() : Promise.resolve()).catch(() => {}).then(() => {
+        if (current !== card) return; // the pointer has moved on
+        big.src = url;
+        place(card);
+        big.classList.add('on');
+      });
+    };
+    const detail = $('rg-detail');
+    detail.addEventListener('pointerover', (e) => {
+      const card = e.target.closest('.rg-scard');
+      if (!card || card === current) return;
+      const src = card.querySelector('img')?.currentSrc;
+      if (!src) return;
+      hide();
+      current = card;
+      timer = setTimeout(() => show(card, src.replace('version=normal', 'version=large')), DELAY);
+    });
+    detail.addEventListener('pointerout', (e) => { if (e.target.closest('.rg-scard') && !e.relatedTarget?.closest?.('.rg-scard')) hide(); });
+    detail.addEventListener('scroll', hide, true);
+    addEventListener('blur', hide);
+  }
   $('rg-detail').addEventListener('click', (e) => {
     if (e.target.closest('.rg-back')) return onBack();
     const tab = e.target.closest('[data-tab]');

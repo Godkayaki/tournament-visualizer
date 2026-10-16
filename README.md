@@ -37,10 +37,10 @@ const blockedBy = (name) => (KEEP.some((r) => r.test(name)) ? null : BLOCK.find(
 - **Regional metagame data with;**
   - Direct comparison between countries, continents and the world
   - Color filtering
-  - *(To-do)* Order by either conversion rate or most played
-  - *(To-do)* In-depth data for each commander 
-    - *(To-do)* (CR%, recent lists, Seat Win%, tendencies...)
-    - *(To-do)* Floor vs Ceiling data for each commander
+  - Order by either conversion rate or most played
+  - In-depth data for each commander 
+    - CR%, recent lists, Seat Win%, spicy cards tendencies...
+    - ***(To-do)*** Floor vs Ceiling data for each commander
 
 ## Run locally
  

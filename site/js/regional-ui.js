@@ -14,7 +14,7 @@ const PAGE = 20; // rows added by each "Show more"
 // region / vs are region keys (see regional.js); vs can also be 'none'.
 // sort is 'most' (most played), 'conv' (conversion rate) or 'diff' (biggest differences, only while comparing).
 const view = { region: 'world', vs: 'world', players: 30, months: 6, minEntries: 20, sort: 'most', colors: new Set(), query: '',
-  commander: null, dTab: 'data', dMetric: 'share', dGroup: 'auto' }; // commander: id of the commander whose own view is open (commander-ui.js), or null
+  commander: null, dTab: 'data', dMetric: 'share', dGroup: 'month' }; // commander: id of the commander whose own view is open (commander-ui.js), or null
 let picked = [];       // the tournaments that pass view.players / view.months
 let listStale = false; // filters changed while a commander was open: the list is redrawn when going back
 let meta = null;       // data/meta.json
