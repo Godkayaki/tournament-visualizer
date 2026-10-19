@@ -38,6 +38,31 @@ export function makeBuckets(tournaments, months, group, now = Date.now() / 1000)
   return { unit, list, bucketOf };
 }
 
+// Dates worth marking on the time charts (UTC days). `text` is shown in the legend under the chart and in the tooltip.
+export const EVENTS = [
+  { date: '2024-09-23', label: '23 Sep 2024', text: 'Jeweled Lotus, Dockside Extortionist, Mana Crypt and Nadu, Winged Wisdom are banned.' },
+  { date: '2025-06-01', label: '1 Jun 2025', text: 'TopDeck starts providing commander data. Before this date most decks have no commander recorded, so older numbers rest on very few decks.' },
+];
+
+// Where each event falls on the chart: [{ ...event, pos }], pos = a position between bucket indexes (3.5 = halfway between the 4th and
+// 5th point). Events outside the period on screen are left out.
+export function eventPositions(buckets, events = EVENTS) {
+  const list = buckets.list;
+  if (list.length < 2) return [];
+  const last = list[list.length - 1].start;
+  const end = buckets.unit === 'week' ? last + 7 * DAY : nextMonth(last);
+  const out = [];
+  for (const e of events) {
+    const ts = Date.parse(`${e.date}T00:00:00Z`) / 1000;
+    if (!(ts >= list[0].start && ts < end)) continue;
+    let i = 0;
+    while (i + 1 < list.length && list[i + 1].start <= ts) i++;
+    const next = i + 1 < list.length ? list[i + 1].start : end;
+    out.push({ ...e, pos: i + (ts - list[i].start) / (next - list[i].start) });
+  }
+  return out;
+}
+
 // ---- One commander in one region ----
 // `allowed`: Set of commander ids that pass "Min. entries" (null = all). The commander itself always counts, so its share stays a
 // real share even when it is below the filter.

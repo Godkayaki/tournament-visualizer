@@ -232,6 +232,9 @@
 .ch-y, .ch-x { fill: var(--dim); font-size: 11px; }
 .ch-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .ch-dot { stroke: var(--panel); stroke-width: 2; }
+.ch-event { stroke: #8b96a8; stroke-width: 1.5; stroke-dasharray: 6 5; opacity: .4; }
+.ch-ev { max-width: 230px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--line); color: var(--dim); }
+.ch-ev b { color: var(--text); font-weight: 600; }
 .ch-cross { stroke: #6b7585; stroke-width: 1; stroke-dasharray: 3 3; }
 .ch-tip { position: absolute; z-index: 3; min-width: 150px; padding: 8px 10px; font-size: 12px; line-height: 1.5; color: var(--text);
   background: #0d1117; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .5); pointer-events: none; }

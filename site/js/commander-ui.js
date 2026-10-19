@@ -6,7 +6,7 @@ import { loadSeats, loadEntries, loadSpicy } from './data.js';
 import { deckUrl } from './tournament.js';
 import { $, esc, fmtDate, place as placeName, ord } from './utils.js';
 import { colorName, regionLabel, MIN_CONV_DECKS } from './regional.js';
-import { makeBuckets, inRegion, commanderIn, commanderByCountry, spicyCards, SPICY, share, conversion, cutShare, isThin, seatRate, seatOverall } from './commander.js';
+import { makeBuckets, eventPositions, inRegion, commanderIn, commanderByCountry, spicyCards, SPICY, share, conversion, cutShare, isThin, seatRate, seatOverall } from './commander.js';
 import { lineChart } from './chart.js';
 
 const COLOR_A = 'var(--accent)';
@@ -86,6 +86,7 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
     <div class="rg-card2${isThin(tA) ? ' thin' : ''}"><i>Conversion</i><b>${pct(conversion(tA))}</b><small>${tA.cut.toLocaleString()} of ${tA.elig.toLocaleString()} decks${isThin(tA) && tA.decks ? ' · small sample' : ''}</small>${B ? versus(nameB, conversion(tA), conversion(tB)) : ''}</div>
     <div class="rg-card2${isThin(tA) ? ' thin' : ''}"><i>Top cut conversion</i><b>${pct(cutShare(tA))}</b><small>${tA.cut.toLocaleString()} of ${tA.cutAll.toLocaleString()} top cut decks</small>${B ? versus(nameB, cutShare(tA), cutShare(tB)) : ''}</div>`;
 
+  const events = eventPositions(buckets);
   const tableRows = A.buckets.map((_, i) => `<tr><th scope="row">${esc(buckets.list[i].title)}</th>${series.map((s) => `<td>${pct(s.values[i])}</td>`).join('')}</tr>`).join('');
   const notes = [];
   if (allowed) notes.push(`Shares are calculated over the decks of commanders with at least ${view.minEntries} entries in the world (Min. entries); change that filter above to widen or narrow them.`);
@@ -112,6 +113,7 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
   lineChart($('rg-chart'), {
     labels: buckets.list.map((b) => b.label),
     series,
+    events,
     title: `${unitName} of ${names.join(' / ')} over time`,
     tooltip: (i) => `<b>${esc(buckets.list[i].title)}</b>` + series.map((s) => {
       const d = s.data[i];

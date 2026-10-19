@@ -14,7 +14,8 @@ function niceScale(max, ticks = 4) {
 const tickLabel = (v, step) => `${Number(v.toFixed(step < 1 ? 2 : step < 10 ? 1 : 0))}%`;
 
 // options: { labels: string[] (x axis), series: [{ name, color, values: (number|null)[] }], tooltip: (index) => html,
-//            title: string (accessible name), format: (value) => string }
+//            title: string (accessible name), format: (value) => string,
+//            events: [{ pos (fractional index on the x axis), label, text }] marked with a faint dashed vertical line }
 export function lineChart(el, options) {
   el._chartObserver?.disconnect();
   let drawnWidth = 0;
@@ -31,7 +32,7 @@ export function lineChart(el, options) {
   }
 }
 
-function render(el, { labels, series, tooltip, title, format = (v) => `${v.toFixed(1)}%` }, width) {
+function render(el, { labels, series, tooltip, title, events = [], format = (v) => `${v.toFixed(1)}%` }, width) {
   const height = width < 520 ? 230 : 290;
   const m = { l: 46, r: 14, t: 14, b: 30 };
   const w = width - m.l - m.r, h = height - m.t - m.b;
@@ -46,6 +47,7 @@ function render(el, { labels, series, tooltip, title, format = (v) => `${v.toFix
     svg += `<line class="ch-grid${v === 0 ? ' base' : ''}" x1="${m.l}" x2="${m.l + w}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/>`;
     svg += `<text class="ch-y" x="${m.l - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${tickLabel(v, step)}</text>`;
   }
+  for (const e of events) if (n > 1) svg += `<line class="ch-event" x1="${x(e.pos).toFixed(1)}" x2="${x(e.pos).toFixed(1)}" y1="${m.t}" y2="${m.t + h}"/>`;
   const every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(w / 72)))); // thin the x labels so they never collide
   labels.forEach((label, i) => {
     if (i % every === 0) svg += `<text class="ch-x" x="${x(i).toFixed(1)}" y="${height - 8}" text-anchor="middle">${esc(label)}</text>`;
@@ -78,7 +80,7 @@ function render(el, { labels, series, tooltip, title, format = (v) => `${v.toFix
       dots[k].hidden = v === null;
       if (v !== null) { dots[k].setAttribute('cx', x(i)); dots[k].setAttribute('cy', y(v)); }
     });
-    tip.innerHTML = tooltip(i);
+    tip.innerHTML = tooltip(i) + events.filter((e) => Math.abs(e.pos - i) <= 0.5).map((e) => `<div class="ch-ev"><b>${esc(e.label)}</b> ${esc(e.text)}</div>`).join('');
     const tx = (x(i) / width) * box.width;
     tip.style.left = `${tx > box.width * 0.6 ? tx - tip.offsetWidth - 12 : tx + 12}px`;
     tip.style.top = '8px';
