@@ -5,16 +5,18 @@ import { esc } from './utils.js';
 const NS = 'http://www.w3.org/2000/svg';
 
 // A "nice" top for the y axis and the tick step, so the gridlines fall on round numbers
-function niceScale(max, ticks = 4) {
-  if (!(max > 0)) return { top: 1, step: 0.25 };
+function niceScale(max, ticks = 4, integer = false) {
+  if (!(max > 0)) return { top: integer ? 4 : 1, step: integer ? 1 : 0.25 };
   const raw = max / ticks, mag = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+  const step = (integer ? [1, 2, 5, 10] : [1, 2, 2.5, 5, 10]).map((m) => m * mag).find((s) => s >= raw && (!integer || Number.isInteger(s))) || Math.ceil(raw);
   return { top: Math.ceil(max / step) * step, step };
 }
 const tickLabel = (v, step) => `${Number(v.toFixed(step < 1 ? 2 : step < 10 ? 1 : 0))}%`;
 
 // options: { labels: string[] (x axis), series: [{ name, color, values: (number|null)[] }], tooltip: (index) => html,
 //            title: string (accessible name), format: (value) => string,
+//            yLabel: (value, step) => string for the y axis (default: a percentage), integer: true for counts (whole-number gridlines),
+//            (a series can also have dash: '6 4', width: 3 and noDots: true),
 //            events: [{ pos (fractional index on the x axis), label, text }] marked with a faint dashed vertical line }
 export function lineChart(el, options) {
   el._chartObserver?.disconnect();
@@ -32,20 +34,20 @@ export function lineChart(el, options) {
   }
 }
 
-function render(el, { labels, series, tooltip, title, events = [], format = (v) => `${v.toFixed(1)}%` }, width) {
+function render(el, { labels, series, tooltip, title, events = [], integer = false, yLabel = tickLabel, format = (v) => `${v.toFixed(1)}%` }, width) {
   const height = width < 520 ? 230 : 290;
   const m = { l: 46, r: 14, t: 14, b: 30 };
   const w = width - m.l - m.r, h = height - m.t - m.b;
   const n = labels.length;
   const values = series.flatMap((s) => s.values).filter((v) => v !== null);
-  const { top, step } = niceScale(Math.max(0, ...values) * 1.05);
+  const { top, step } = niceScale(Math.max(0, ...values) * (integer ? 1 : 1.05), 4, integer);
   const x = (i) => m.l + (n > 1 ? (i * w) / (n - 1) : w / 2);
   const y = (v) => m.t + h - (v / top) * h;
 
   let svg = `<svg viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img" aria-label="${esc(title || 'Line chart')}">`;
   for (let v = 0; v <= top + step / 2; v += step) { // grid + y labels (the baseline is a little stronger)
     svg += `<line class="ch-grid${v === 0 ? ' base' : ''}" x1="${m.l}" x2="${m.l + w}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/>`;
-    svg += `<text class="ch-y" x="${m.l - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${tickLabel(v, step)}</text>`;
+    svg += `<text class="ch-y" x="${m.l - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${yLabel(v, step)}</text>`;
   }
   for (const e of events) if (n > 1) svg += `<line class="ch-event" x1="${x(e.pos).toFixed(1)}" x2="${x(e.pos).toFixed(1)}" y1="${m.t}" y2="${m.t + h}"/>`;
   const every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(w / 72)))); // thin the x labels so they never collide
@@ -59,8 +61,8 @@ function render(el, { labels, series, tooltip, title, events = [], format = (v) 
       d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`;
       pen = true;
     });
-    svg += `<path class="ch-line" d="${d}" style="stroke:${s.color}"/>`;
-    if (n <= 40) s.values.forEach((v, i) => { if (v !== null) svg += `<circle class="ch-dot" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4" style="fill:${s.color}"/>`; });
+    svg += `<path class="ch-line" d="${d}" style="stroke:${s.color}${s.dash ? `;stroke-dasharray:${s.dash}` : ''}${s.width ? `;stroke-width:${s.width}` : ''}"/>`;
+    if (n <= 40 && !s.noDots) s.values.forEach((v, i) => { if (v !== null) svg += `<circle class="ch-dot" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4" style="fill:${s.color}"/>`; });
   }
   svg += '<g class="ch-hover" hidden><line class="ch-cross" y1="' + m.t + '" y2="' + (m.t + h) + '"/>';
   for (const s of series) svg += `<circle class="ch-dot big" r="5.5" style="fill:${s.color}" hidden/>`;

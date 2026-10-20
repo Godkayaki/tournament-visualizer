@@ -27,3 +27,19 @@ html.doc #title p { display: block; } /* keep the tagline at every width (the gl
 .policy404 h2 { margin: 0; font-size: 30px; line-height: 1.2; }
 
 html.doc footer { position: static; width: min(760px, calc(100% - 32px)); margin: 24px auto 20px; }
+
+/* Methodology page: the tournaments-per-week chart (chart styles come from regional.css) */
+.mt-tools { margin: 4px 0 6px; }
+.mt-tools label { display: inline-flex; align-items: center; gap: 8px; color: var(--dim); font-size: 13px; }
+.mt-tools select { font: inherit; font-size: 13px; color: var(--text); background: #161b22; border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+.mt-tools select:hover { border-color: var(--accent); }
+.mt-note { margin: 6px 0 0; color: var(--dim); font-size: 13px; }
+
+/* Back-to-top button (js/totop.js) */
+#totop { position: fixed; right: 20px; bottom: 20px; z-index: 10; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; cursor: pointer;
+  color: var(--accent); background: #161b22; border: 1px solid var(--line); border-radius: 50%; box-shadow: 0 4px 14px rgba(0, 0, 0, .5);
+  opacity: 0; transform: translateY(8px); transition: opacity .2s ease, transform .2s ease, border-color .15s ease, background .15s ease; }
+#totop.on { opacity: 1; transform: none; }
+#totop[hidden] { display: none; }
+#totop:hover, #totop:focus-visible { border-color: var(--accent); background: #0d1117; outline: none; }
+@media (prefers-reduced-motion: reduce) { #totop { transition: none; } }

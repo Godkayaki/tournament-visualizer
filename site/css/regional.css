@@ -245,7 +245,7 @@
 .rg-table table { margin-top: 8px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .rg-table th, .rg-table td { padding: 3px 14px 3px 0; text-align: left; font-weight: 400; }
 .rg-table tbody th { color: var(--text); }
-.rg-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-top: 18px; }
+.rg-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 4px 0 18px; }
 .rg-card2 { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #161b22; font-variant-numeric: tabular-nums; }
 .rg-card2 i { display: block; font-style: normal; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; color: #b9c5de; }
 .rg-card2 b { display: block; font-size: 22px; line-height: 1.25; }

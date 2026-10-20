@@ -94,6 +94,7 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
   notes.push('Seat win rate is the share of games this commander won from that seat, in four-player games.');
 
   const html = `
+    <div class="rg-cards">${cards}</div>
     <div class="rg-dtools">
       <label>Chart <select id="rg-dmetric"><option value="share">Meta share</option><option value="conv">Conversion rate</option></select></label>
       <label>Group by <select id="rg-dgroup"><option value="month">Months</option><option value="week">Weeks</option></select></label>
@@ -102,7 +103,6 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
     <div class="rg-chart" id="rg-chart"></div>
     <details class="rg-table"><summary>Show the chart as a table</summary>
       <table><thead><tr><th>${buckets.unit === 'week' ? 'Week' : 'Month'}</th>${series.map((s) => `<th>${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${tableRows}</tbody></table></details>
-    <div class="rg-cards">${cards}</div>
     <h4 class="rg-dh">Seat win rate</h4>
     ${seatTable(A, B, nameA, nameB)}
     <p class="rg-note">${esc(notes.join(' '))}</p>`;

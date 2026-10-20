@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="author" content="Daniel Gonzalez">
-  <title>EDHGlobe | How the numbers are calculated</title>
+  <title>EDHGlobe | More information</title>
   <link rel="icon" href="static/logo.ico" sizes="any">
   <link rel="apple-touch-icon" type="image/png" sizes="167x167" href="static/logo-167x167.png"> 
   <link rel="apple-touch-icon" type="image/png" sizes="180x180" href="static/logo-180x180.png">
@@ -12,7 +12,7 @@
   <meta name="description" content="How EDHGlobe calculates the Regional Metagame: meta share, conversion rate, regions, colors and comparisons, and why the numbers can differ from other sites.">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="EDHGlobe">
-  <meta property="og:title" content="EDHGlobe | How the numbers are calculated">
+  <meta property="og:title" content="EDHGlobe | More information">
   <meta property="og:description" content="How EDHGlobe calculates the Regional Metagame: meta share, conversion rate, regions, colors and comparisons, and why the numbers can differ from other sites.">
   <meta property="og:url" content="https://edhglobe.com/methodology">
   <meta property="og:image" content="https://edhglobe.com/static/og-image.png">
@@ -21,6 +21,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/privacy.css">
+  <link rel="stylesheet" href="css/regional.css"> <!-- the chart styles -->
   <script src="js/theme.js"></script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-3VG8KXHHG1"></script>
@@ -45,12 +46,19 @@
   </header>
 
   <main class="policy">
-    <h2>How the numbers are calculated</h2>
+    <h2>More information</h2>
     <p class="updated">Last updated: October 11, 2026</p>
 
     <div class="summary">
-      <p><strong>TLDR:</strong> every figure in the <em>Regional Metagame</em> window is counted from the public results of the tournaments on TopDeck.gg that EDHGlobe shows on the globe. <b>Meta share</b> is the percentage of decks (with a listed commander, from commanders that pass the <em>Min. entries</em> filter) that played a given commander, and <b>conversion</b> is the percentage of those decks that made the top cut, only counting tournaments that had one. Nothing is estimated or predicted, and nothing is added by hand.</p>
+      <p><strong>TLDR:</strong> every figure in the <em>Regional Metagame</em> window is counted from the public results of the tournaments on TopDeck.gg that EDHGlobe shows on the globe. <b>Meta share</b> is the percentage of decks (with a listed commander, from commanders that pass the <em>Min. entries</em> filter) that played a given commander, and <b>conversion</b> is the percentage of those decks that made the top cut, only counting tournaments that had one. Nothing is estimated or predicted, and nothing is added by hand (the smoothed trend line in the tournaments-per-week chart is the only fitted value).</p>
     </div>
+
+    <h3>Tournaments per week</h3>
+    <p>How many of the tournaments we count were played each week. It follows the same rules as the globe: the cEDH name filter is applied and only the players filter below changes what is included. The current week is left out until it ends. The orange line is a smoothed trend: it is fitted to the weeks around each point, so it ignores the ups and downs from one week to the next and shows how many tournaments a typical week has at that time, and whether that is rising or falling. It describes the past, it isn't a forecast.</p>
+    <div class="mt-tools"><label>Players <select id="tpw-players" aria-label="Minimum players"><option value="0">All</option><option value="30">30+</option><option value="50">50+</option><option value="100">100+</option></select></label></div>
+    <p class="rg-legend"><i class="a"></i>Tournaments per week <i class="b"></i>Trend</p>
+    <div class="rg-chart" id="tpw-chart"><noscript>The chart needs JavaScript.</noscript></div>
+    <p class="mt-note" id="tpw-note"></p>
 
     <h3>Where the data comes from</h3>
     <ul>
@@ -217,5 +225,7 @@
     <div>Support me on <a href="https://ko-fi.com/kayaki" target="_blank" rel="noopener">Ko-Fi</a></div>
     <div>Check out our <a href="privacy">Privacy Policy</a></div>
   </footer>
+  <script type="module" src="js/methodology.js"></script>
+  <script src="js/totop.js" defer></script>
 </body>
 </html>
