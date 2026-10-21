@@ -12,6 +12,7 @@ import { mkdir, writeFile, readFile, readdir, appendFile } from 'node:fs/promise
 import { fileURLToPath } from 'node:url';
 import { seatStats, playerSeats } from './seats.mjs';
 import { encodeDecks } from './decks.mjs';
+import { deckIdOf, applyCache, LINKS } from './moxfield.mjs';
 
 const KEY = process.env.TOPDECK_API_KEY;
 if (!KEY) { console.error('Missing TOPDECK_API_KEY'); process.exit(1); }
@@ -117,6 +118,7 @@ if (!process.env.FULL) {
 
 await mkdir(OUT + 't/', { recursive: true });
 await mkdir(DECKS, { recursive: true });
+await mkdir(LINKS, { recursive: true });
 
 if (!skipFetch) {
   const seen = new Map();
@@ -152,6 +154,11 @@ if (!skipFetch) {
     });
     const decks = encodeDecks(t.standings); // card lists for the Spicy cards tab (null when the API gave none)
     if (decks) { withDecks++; await writeFile(`${DECKS}${f}.json`, JSON.stringify(decks)); }
+    // Decks submitted as a Moxfield link have no commander in the API answer (TopDeck reads lists itself only since June 2025): keep the
+    // deck ids so scripts/moxfield.mjs can fill the commanders in from its cache (see backfill-moxfield.mjs)
+    const mox = {};
+    for (const p of t.standings) if (p.id && !commanders(p).length) { const id = deckIdOf(p.decklist); if (id) mox[p.id] = id; }
+    if (Object.keys(mox).length) await writeFile(`${LINKS}${f}.json`, JSON.stringify(mox));
     // Standings are kept in the order the API returns them (assumed to be final placement).
     await writeFile(`${OUT}t/${f}.json`, JSON.stringify(
       t.standings.map((p) => ({ n: p.name, i: p.id, c: commanders(p), w: p.wins || 0, d: p.draws || 0, l: p.losses || 0, ...(perPlayer?.has(p.id) ? { q: perPlayer.get(p.id) } : {}) }))
@@ -192,6 +199,13 @@ if (!skipFetch) {
     `Version: ${version}`,
     '',
   ]);
+}
+
+// ---- Commanders of Moxfield-link decks, from the cache that backfill-moxfield.mjs fills (no network; also runs on cached deploys) ----
+{
+  const m = await applyCache(OUT);
+  console.log(`Moxfield links: ${m.links} decks with a link in the tournaments on disk, commanders filled in for ${m.patched} (in ${m.tournaments} tournaments)${m.links ? '' : '  (none yet: run a full fetch to record the links)'}`);
+  await summary(['### Moxfield links', `${m.links} decks with a link, commanders filled in for ${m.patched}.`, '']);
 }
 
 // ---- Commander art: name -> [front-face art_crop URL], resolved via Scryfall ----

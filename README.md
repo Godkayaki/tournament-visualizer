@@ -60,6 +60,8 @@ Usually accessible through `http://localhost:3000`
 The first time `node scripts/fetch-data.mjs` is run it fetches data once, storing it on `data/t/art.json` and `data/t/tournaments.json`. After that you don't need to run it again for testing purposes.
  
 As a side note, I've also added a `check-recent.mjs` file that you can run to check the recent tournament status of the last 4-5 days, where you can check the number of players and the reason why it's included or not and if it will be added on the next `fetch-data.mjs` you run. You can also check the current cached data on `actions -> caches`.
+
+**Commanders before June 2025** - For older tournaments TopDeck gives no commander, only a link the player submitted (mostly Moxfield). `scripts/fetch-data.mjs` keeps those deck ids in `.cache/links/` and fills the commanders from `scripts/data/moxfield-commanders.json` (`scripts/moxfield.mjs`). That file is built once, from your own computer, by `scripts/backfill-moxfield.mjs`, which needs the private Moxfield user agent in the `MOXFIELD_USER_AGENT` environment variable (never in a file or in the repository, never in the Action) and makes at most one request per second; commit the file it writes. The Action never calls Moxfield. Tournaments reads `data/c/<commander index>.json` (every deck with its place and player, rewritten by `scripts/build-meta.mjs` on every build) and links each row to the TopDeck decklist.
  
 ## Regional Metagame
  
