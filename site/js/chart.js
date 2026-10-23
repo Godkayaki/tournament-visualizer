@@ -62,7 +62,12 @@ function render(el, { labels, series, tooltip, title, events = [], integer = fal
       pen = true;
     });
     svg += `<path class="ch-line" d="${d}" style="stroke:${s.color}${s.dash ? `;stroke-dasharray:${s.dash}` : ''}${s.width ? `;stroke-width:${s.width}` : ''}"/>`;
-    if (n <= 40 && !s.noDots) s.values.forEach((v, i) => { if (v !== null) svg += `<circle class="ch-dot" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="4" style="fill:${s.color}"/>`; });
+    // Dots: every point on short charts; on long ones only the lonely points (a value between two empty periods has no line to show it)
+    if (!s.noDots) s.values.forEach((v, i) => {
+      if (v === null) return;
+      const lonely = s.values[i - 1] == null && s.values[i + 1] == null;
+      if (n <= 40 || lonely) svg += `<circle class="ch-dot" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${n <= 40 ? 4 : 3.5}" style="fill:${s.color}"/>`;
+    });
   }
   svg += '<g class="ch-hover" hidden><line class="ch-cross" y1="' + m.t + '" y2="' + (m.t + h) + '"/>';
   for (const s of series) svg += `<circle class="ch-dot big" r="5.5" style="fill:${s.color}" hidden/>`;
