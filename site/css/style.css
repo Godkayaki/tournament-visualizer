@@ -147,7 +147,7 @@ body:has(:is(#modal, #rg-modal):not([hidden])) :is(#filters, #statsbar, #regiona
 
 .banner { flex: none; min-height: 130px; padding: 22px 56px 14px 20px; display: flex; flex-direction: column; justify-content: flex-end;
   background-image: linear-gradient(180deg, rgba(13, 17, 23, .25), var(--panel)), var(--banner-art, none);
-  background-size: cover; background-position: center 22%; }
+  background-size: cover; background-position: center var(--banner-pos, 22%); }
 .banner h2 { margin: 0 0 2px; font-size: 22px; text-shadow: 0 1px 8px rgba(0, 0, 0, .8); }
 #m-meta, #m-draw { margin: 0; color: #c9d3e8; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
 #m-draw { margin-bottom: 10px; }

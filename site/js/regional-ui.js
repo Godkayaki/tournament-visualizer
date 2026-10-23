@@ -3,7 +3,7 @@
 import { $, esc } from './utils.js';
 import { state } from './state.js';
 import { pick } from './filters.js';
-import { loadMeta, loadArt } from './data.js';
+import { loadMeta, loadArt, artImgs } from './data.js';
 import { openPanel, closePanel } from './panels.js';
 import { showCommander, hideCommander, renderCommander, initCommander } from './commander-ui.js';
 import { tally, rank, scopeFor, regionExists, regionLabel, CONTINENTS, colorFilter, colorName, colorTotals, fieldConversion, avgDrawRate, MIN_CONV_DECKS } from './regional.js';
@@ -46,8 +46,7 @@ function convHtml(r) {
 }
 
 function rowHtml(r) {
-  const pics = r.names.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2) // partners: both arts side by side
-    .map((u) => `<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('');
+  const pics = artImgs(r.names, art, 'loading="lazy" decoding="async"'); // partners: both arts side by side
   const bar = (cls, v) => `<i class="${cls}" style="width:${((v / maxPct) * 100).toFixed(1)}%${v > 0 ? ';min-width:3px' : ''}"></i>`;
   const compare = r.basePct != null;
   return `<li class="rg-row" data-id="${r.id}" tabindex="0" role="button" title="Open the details of ${esc(r.name)}">

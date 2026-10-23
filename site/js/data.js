@@ -1,3 +1,5 @@
+import { esc } from './utils.js';
+
 // Everything fetched from the site's own static files (data/ is generated at build time, content/ is edited by hand).
 
 // index.html starts the three startup requests while the page is still parsing (window.__early), so they download in parallel with the
@@ -12,6 +14,23 @@ export const loadTournaments = () =>
 // Commander name -> art URLs. Fetched once, on first use; a missing file just means no art.
 let artPromise;
 export const loadArt = () => (artPromise ??= early('a', 'data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
+
+// Where to aim the commander banner crop: { "Commander name": percent from the top of the art }. Edited by hand (content/banner-focus.json);
+// a missing file or name just means the default. Open the site with ?tune to find the numbers (see commander-ui.js).
+let focusPromise;
+let focusMap = {};
+export const loadFocus = () => (focusPromise ??= fetch('content/banner-focus.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
+  .then((f) => (focusMap = f && typeof f === 'object' ? f : {})));
+// The aim for one commander's art, 0-100 (percent from the top), or null for the default
+export const focusY = (name) => { const y = Number(focusMap[name]); return Number.isFinite(y) ? Math.min(100, Math.max(0, y)) : null; };
+// <img> tags for the art of these commanders (front faces; partners side by side), each aimed as banner-focus.json says.
+// `extra` is more attributes for every img. data-name lets the ?tune sliders know which commander an image is.
+export function artImgs(names, art, extra = '') {
+  return names.map((n) => [n, (art[n] || [])[0]]).filter(([, u]) => u).slice(0, 2).map(([n, u]) => {
+    const y = focusY(n);
+    return `<img src="${esc(u)}" alt="" ${extra} data-name="${esc(n)}"${y === null ? '' : ` style="object-position: center ${y}%"`}>`;
+  }).join('');
+}
 
 // Regional metagame counts (built by scripts/build-meta.mjs). Fetched the first time the window opens; a failure can be retried.
 let metaPromise;

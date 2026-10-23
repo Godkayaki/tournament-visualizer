@@ -2,7 +2,7 @@
 // of its meta share (or conversion) over time for the chosen region and an optional second one, and its numbers: conversion, seat
 // win rates... It uses the window's own filters (region, compare with, players, min. entries, period), so everything stays in step.
 // regional-ui.js owns the state and hands it over through the function given to initCommander().
-import { loadSeats, loadEntries, loadSpicy } from './data.js';
+import { loadSeats, loadEntries, loadSpicy, artImgs } from './data.js';
 import { deckUrl } from './tournament.js';
 import { $, esc, fmtDate, place as placeName, ord } from './utils.js';
 import { colorName, regionLabel, MIN_CONV_DECKS } from './regional.js';
@@ -29,9 +29,14 @@ function versus(name, a, b, digits = 1) {
   return `<small>${esc(name)} ${pct(b, digits)}${gap}</small>`;
 }
 
+// Banner crop: the art is much taller than the banner, so only a strip of it shows. The default (22% from the top, in the CSS) suits most
+// art; content/banner-focus.json can aim a commander's art higher or lower so the face stays in view.
+// ?tune: sliders on the banner to find those numbers. Only on your own computer (localhost): on the live site the parameter does nothing.
+const tuning = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname) && new URLSearchParams(location.search).has('tune');
+
 function bannerHtml(meta, art, id) {
   const names = meta.commanders[id];
-  const pics = names.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2).map((u) => `<img src="${esc(u)}" alt="" decoding="async">`).join('');
+  const pics = artImgs(names, art, 'decoding="async"');
   const colors = meta.colors?.[id]; // identity in WUBRG order, '' = colorless, null = unknown
   const letters = colors == null ? [] : colors === '' ? ['C'] : [...colors];
   const symbols = letters.map((c) => `<img src="static/${c}.svg" alt="" width="22" height="22" draggable="false">`).join('');
@@ -367,9 +372,30 @@ export function renderCommander() {
       <div class="rg-tabs" role="tablist">${TABS.map(([key, label]) => `<button type="button" role="tab" data-tab="${key}">${label}</button>`).join('')}</div>
       <div class="rg-panel" role="tabpanel"></div>`;
   }
+  if (tuning && !detail.querySelector('.rg-tune')) addTuner(detail);
   detail.querySelectorAll('.rg-tabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
   detail.querySelector('.rg-panel').innerHTML = body.html;
   body.after?.();
+}
+
+// ?tune: one slider per banner image. Drag until the face is in view; the line under the sliders is what to add to content/banner-focus.json.
+function addTuner(detail) {
+  const imgs = [...detail.querySelectorAll('.rg-banner-art img')];
+  if (!imgs.length) return;
+  const box = document.createElement('div');
+  box.className = 'rg-tune';
+  const out = document.createElement('code');
+  const update = () => { out.textContent = imgs.map((i) => `${JSON.stringify(i.dataset.name)}: ${Math.round(parseFloat(i.style.objectPosition.split(' ')[1]) || 22)}`).join(',\n'); };
+  imgs.forEach((img) => {
+    const start = parseFloat((img.style.objectPosition || 'center 22%').split(' ')[1]);
+    const label = document.createElement('label');
+    label.innerHTML = `<span>${esc(img.dataset.name)}</span><input type="range" min="0" max="100" value="${Number.isFinite(start) ? start : 22}">`;
+    label.querySelector('input').addEventListener('input', (e) => { img.style.objectPosition = `center ${e.target.value}%`; update(); });
+    box.appendChild(label);
+  });
+  box.appendChild(out);
+  update();
+  detail.querySelector('.rg-banner').after(box);
 }
 
 // Opens the view for commander `id`; the list underneath is kept as it was

@@ -130,6 +130,11 @@
 .rg-banner::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(13, 17, 23, .1), rgba(13, 17, 23, .88)); }
 .rg-banner-art { position: absolute; inset: 0; z-index: -2; display: flex; }
 .rg-banner-art img { flex: 1; min-width: 0; height: 100%; object-fit: cover; object-position: center 22%; }
+.rg-tune { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 0; padding: 10px 12px; font-size: 12px; color: var(--dim); background: #161b22; border: 1px dashed var(--accent); border-radius: 10px; }
+.rg-tune label { display: flex; align-items: center; gap: 10px; }
+.rg-tune label span { flex: none; width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.rg-tune input { flex: 1; accent-color: var(--accent); }
+.rg-tune code { white-space: pre-wrap; color: var(--accent); user-select: all; }
 .rg-banner h3 { margin: 0; font-size: 24px; text-shadow: 0 1px 8px rgba(0, 0, 0, .85); }
 .rg-symbols { display: flex; gap: 5px; margin-top: 6px; }
 .rg-symbols img { display: block; width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(13, 17, 23, .6), 0 2px 8px rgba(0, 0, 0, .6); }

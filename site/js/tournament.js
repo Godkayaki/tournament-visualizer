@@ -1,6 +1,6 @@
 // The tournament popup: banner with the winner's art and the standings, one row per player.
 import { $, esc, fmtDate, place, ord } from './utils.js';
-import { getRows, loadArt, loadMeta } from './data.js';
+import { getRows, loadArt, loadMeta, artImgs, focusY } from './data.js';
 import { pick } from './filters.js';
 import { state } from './state.js';
 import { avgDrawRateOf } from './regional.js';
@@ -70,7 +70,7 @@ function renderMetagame() {
   const { t, rows, art } = shown;
   const { list, listed } = metagameOf(rows, t.tc);
   const rowHtml = (c, i) => {
-    const pics = c.names.map((n) => (art[n] || [])[0]).filter(Boolean).slice(0, 2).map((u) => `<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('');
+    const pics = artImgs(c.names, art, 'loading="lazy" decoding="async"');
     const conv = c.conversion === null ? ['–', 'no top cut'] : [`${c.conversion.toFixed(1)}%`, `${c.cut} of ${c.entries}`];
     return `<li><div class="entry">
       <span class="art">${pics}</span>
@@ -96,6 +96,7 @@ export async function openTournament(t) {
   const average = loadMeta().then((meta) => avgDrawRateOf(meta, pick(state.minPlayers, state.months))).catch(() => null);
   $('m-bracket').href = `https://topdeck.gg/bracket/${encodeURIComponent(t.id)}`;
   $('m-banner').style.removeProperty('--banner-art');
+  $('m-banner').style.removeProperty('--banner-pos');
   $('m-list').innerHTML = '<li class="msg">Loading…</li>';
   openPanel($('modal'), $('m-scroll'));
   try {
@@ -110,10 +111,14 @@ export async function openTournament(t) {
     $('m-draw').innerHTML = drawText(own, null) + seatText(t);
     average.then((avg) => { if ($('m-title').textContent === t.n) $('m-draw').innerHTML = drawText(own, avg) + seatText(t); }); // still the same tournament?
     const winnerArt = rows[0] && imgs(rows[0])[0];
-    if (winnerArt) $('m-banner').style.setProperty('--banner-art', `url("${winnerArt}")`);
+    if (winnerArt) {
+      $('m-banner').style.setProperty('--banner-art', `url("${winnerArt}")`);
+      const y = focusY(rows[0].c.find((n) => (art[n] || [])[0])); // the commander whose art this is
+      if (y !== null) $('m-banner').style.setProperty('--banner-pos', `${y}%`);
+    }
     $('m-list').innerHTML = rows.map((p, i) => {
       const url = esc(deckUrl(t.id, p.i));
-      const pics = imgs(p).map((u) => `<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('');
+      const pics = artImgs(p.c, art, 'loading="lazy" decoding="async"');
       return `<li><a class="entry" href="${url}" target="_blank" rel="noopener">
         <span class="art">${pics}</span>
         <span class="rank" title="${ord(i + 1)} place">${MEDAL[i] || ord(i + 1)}</span>

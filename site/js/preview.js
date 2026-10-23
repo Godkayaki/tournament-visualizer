@@ -1,6 +1,6 @@
 // Winner preview: hovering a tournament in the list shows its winning commander.
 import { $, esc } from './utils.js';
-import { getRows, loadArt } from './data.js';
+import { getRows, loadArt, artImgs } from './data.js';
 
 // ---- Winner preview: hovering a tournament in the list shows its winning commander ----
 // 'row'  = the winner's art fades in as the background of the hovered tournament (no extra info)
@@ -37,13 +37,13 @@ export function preloadRows(from, count) {
 }
 
 // 'row' mode: put the winner's art behind the hovered tournament and fade it in (the row keeps its size and text)
-function showRowArt(btn, pics) {
+function showRowArt(btn, pics, names, art) {
   if (!pics.length) return;
   let el = btn.querySelector('.row-art');
   if (!el) {
     el = document.createElement('span');
     el.className = 'row-art';
-    el.innerHTML = pics.map((u) => `<img src="${esc(u)}" alt="" fetchpriority="high" decoding="async">`).join('');
+    el.innerHTML = artImgs(names, art, 'fetchpriority="high" decoding="async"');
     btn.prepend(el);
   }
   void el.offsetWidth; // flush styles so the fade-in runs even on a freshly added element
@@ -56,7 +56,7 @@ async function showPeek(btn) {
   if (!t) return;
   const art = await loadArt();
   if (HOVER_PREVIEW === 'row' && t.w) { // winners come with the index (see addWinners in fetch-data.mjs): no request needed
-    if (peekFor === btn && t.w.length) showRowArt(btn, picsOf(t.w, art));
+    if (peekFor === btn && t.w.length) showRowArt(btn, picsOf(t.w, art), t.w, art);
     return;
   }
   let rows;
@@ -65,9 +65,9 @@ async function showPeek(btn) {
   const w = rows[0]; // the API lists standings in placement order, so the first row is the winner
   if (!w || !w.c.length) return; // no commander submitted: nothing to show, the list works as before
   const pics = picsOf(w.c, art);
-  if (HOVER_PREVIEW === 'row') return showRowArt(btn, pics);
+  if (HOVER_PREVIEW === 'row') return showRowArt(btn, pics, w.c, art);
   $('peek-art').hidden = !pics.length;
-  $('peek-art').innerHTML = pics.map((u) => `<img src="${esc(u)}" alt="">`).join('');
+  $('peek-art').innerHTML = artImgs(w.c, art);
   $('peek-cmd').textContent = w.c.join(' / ');
   $('peek-player').textContent = `${w.n || 'Unknown Player'} · ${w.w}-${w.l}-${w.d}`;
   const peek = $('peek'), pr = $('area').getBoundingClientRect(), br = btn.getBoundingClientRect();
