@@ -48,12 +48,12 @@
 // is in the top cut when its player is among the first `topCut` rows of the standings (kept in final-placement order by
 // fetch-data.mjs). In a tournament without a top cut every topCutDecks is 0 and the front-end leaves its decks out of the rate.
 
-import { readFile, writeFile, appendFile, mkdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, mkdir, rm, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
 const DECKS = fileURLToPath(new URL('../.cache/decks/', import.meta.url)); // raw card lists written by fetch-data.mjs
-const SCHEMA = 7; // bump when the layout or the counting rules change, so cached files get rebuilt
+const SCHEMA = 8; // bump when the layout or the counting rules change, so cached files get rebuilt
 const NEAREST_KM = 50;
 const SCRYFALL_URL = process.env.SCRYFALL_URL || 'https://api.scryfall.com';
 const SCRYFALL_HEADERS = { 'User-Agent': 'cedh-globe/1.0 (https://github.com/Godkayaki/tournament-visualizer)', Accept: 'application/json', 'Content-Type': 'application/json' };
@@ -77,7 +77,10 @@ let previous = null;
 try { previous = JSON.parse(await readFile(OUT + 'meta.json', 'utf8')); } catch { /* first run */ }
 
 // Code-only deploys reuse the cached data (same `generated` stamp): nothing changed, so skip the work and the download.
-if (!process.env.FULL && previous?.schema === SCHEMA && previous.generated === index.generated && !previous.bordersMissing && !previous.colorsPending) {
+let haveSpicy = true; // card lists were cached but data/s/ was never written (e.g. meta.json was built before this existed): rebuild
+const listCount = (await readdir(DECKS).catch(() => [])).length;
+if (listCount) haveSpicy = (await readdir(OUT + 's/').catch(() => [])).length > 0;
+if (!process.env.FULL && haveSpicy && previous?.schema === SCHEMA && previous.generated === index.generated && !previous.bordersMissing && !previous.colorsPending) {
   console.log('meta.json is up to date');
   await summary(['### Regional metagame data', 'Up to date: reused the cached meta.json.', '']);
   process.exit(0);
@@ -206,7 +209,7 @@ for (const tour of index.tournaments) {
   let unknown = 0, drawGames = 0, games = 0;
   for (const [place, p] of rows.entries()) {
     drawGames += +p.d || 0; games += (+p.w || 0) + (+p.l || 0) + (+p.d || 0);
-    const names = [...new Set((p.c || []).map((s) => String(s).trim()).filter(Boolean))].sort(); // sorted: A/B and B/A are the same deck
+    const names = [...new Set((p.c || []).map((s) => String(s).split(' // ')[0].trim()).filter(Boolean))].sort(); // double-faced: "A // B" and "A" are one commander // sorted: A/B and B/A are the same deck
     if (!names.length) { unknown++; continue; }
     const id = idOf(names);
     const rowsOf = entriesOut.get(id) || entriesOut.set(id, []).get(id);

@@ -1,6 +1,6 @@
 // The tournament popup: banner with the winner's art and the standings, one row per player.
 import { $, esc, fmtDate, place, ord } from './utils.js';
-import { getRows, loadArt, loadMeta, artImgs, focusY } from './data.js';
+import { canon, getRows, loadArt, loadMeta, artImgs, focusY } from './data.js';
 import { pick } from './filters.js';
 import { state } from './state.js';
 import { avgDrawRateOf } from './regional.js';
@@ -21,7 +21,7 @@ export function metagameOf(rows, tc) {
   let unlisted = 0;
   rows.forEach((p, i) => {
     if (!p.c.length) { unlisted++; return; }
-    const names = [...p.c].sort(); // partners listed in a different order are still the same commander
+    const names = [...new Set(p.c.map(canon))].sort(); // partners listed in a different order are still the same commander
     const key = names.join(' / ');
     let c = by.get(key);
     if (!c) by.set(key, (c = { key, names, entries: 0, cut: 0, draws: 0, games: 0 }));

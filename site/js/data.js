@@ -13,7 +13,13 @@ export const loadTournaments = () =>
 
 // Commander name -> art URLs. Fetched once, on first use; a missing file just means no art.
 let artPromise;
-export const loadArt = () => (artPromise ??= early('a', 'data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
+// Double-faced commanders show up as "Front // Back" or just "Front": both are the same commander, so we count them under the front face
+export const canon = (name) => String(name).split(' // ')[0].trim();
+export const loadArt = () => (artPromise ??= early('a', 'data/art.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
+  .then((art) => { // make the art findable by front-face name too
+    for (const k of Object.keys(art)) { const f = canon(k); if (f !== k && !(art[f] || []).length) art[f] = art[k]; }
+    return art;
+  }));
 
 // Where to aim the commander banner crop: { "Commander name": percent from the top of the art }. Edited by hand (content/banner-focus.json);
 // a missing file or name just means the default. Open the site with ?tune to find the numbers (see commander-ui.js).
@@ -22,7 +28,7 @@ let focusMap = {};
 export const loadFocus = () => (focusPromise ??= fetch('content/banner-focus.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({}))
   .then((f) => (focusMap = f && typeof f === 'object' ? f : {})));
 // The aim for one commander's art, 0-100 (percent from the top), or null for the default
-export const focusY = (name) => { const y = Number(focusMap[name]); return Number.isFinite(y) ? Math.min(100, Math.max(0, y)) : null; };
+export const focusY = (name) => { const y = Number(focusMap[name] ?? focusMap[canon(name)]); return Number.isFinite(y) ? Math.min(100, Math.max(0, y)) : null; };
 // <img> tags for the art of these commanders (front faces; partners side by side), each aimed as banner-focus.json says.
 // `extra` is more attributes for every img. data-name lets the ?tune sliders know which commander an image is.
 export function artImgs(names, art, extra = '') {
