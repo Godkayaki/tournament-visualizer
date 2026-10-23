@@ -41,15 +41,10 @@ export function makeBuckets(tournaments, months, group, now = Date.now() / 1000)
   return { unit, list, bucketOf };
 }
 
-// Dates worth marking on the time charts (UTC days). `text` is shown in the legend under the chart and in the tooltip.
-export const EVENTS = [
-  { date: '2024-09-23', label: '23 Sep 2024', text: 'Jeweled Lotus, Dockside Extortionist, Mana Crypt and Nadu, Winged Wisdom are banned.' },
-  { date: '2025-06-01', label: '1 Jun 2025', text: 'TopDeck starts providing commander data. Before this date most decks have no commander recorded, so older numbers rest on very few decks.' },
-];
-
 // Where each event falls on the chart: [{ ...event, pos }], pos = a position between bucket indexes (3.5 = halfway between the 4th and
 // 5th point). Events outside the period on screen are left out.
-export function eventPositions(buckets, events = EVENTS) {
+// events come from content/chart-events.json (see loadEvents in data.js)
+export function eventPositions(buckets, events = []) {
   const list = buckets.list;
   if (list.length < 2) return [];
   const last = list[list.length - 1].start;

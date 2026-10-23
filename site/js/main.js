@@ -1,7 +1,7 @@
 // Entry point: wires the modules together. The code for each part lives in its own file next to this one.
 import { $ } from './utils.js';
 import { state } from './state.js';
-import { loadTournaments, loadFeatured, loadArt, loadFocus } from './data.js';
+import { loadTournaments, loadFeatured, loadArt, loadFocus, loadEvents } from './data.js';
 import { blockedBy } from './filters.js';
 import { showUpdated, showVersion } from './meta.js';
 import { initGlobe, render, updateTier } from './globe.js';
@@ -13,6 +13,7 @@ import { initRegional, closeRegional } from './regional-ui.js';
 import { initColorPicker } from './tools.js';
 
 loadArt(); // start the commander-art request right away; the list and the popup reuse it
+loadEvents(); // chart event lines (content/chart-events.json)
 loadFocus(); // where each commander's art is aimed (content/banner-focus.json); tiny, and needed before any art is shown
 const world = initGlobe();
 initStars(world);

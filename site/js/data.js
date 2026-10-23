@@ -99,3 +99,18 @@ let seatsPromise;
 export const loadSeats = () => (seatsPromise ??= fetch('data/seats.json')
   .then((r) => (r.ok ? r.json() : null))
   .catch(() => null));
+
+// Dates marked with a dashed line on the commander charts: content/chart-events.json, [{ date: 'YYYY-MM-DD', label?: '23 Sep 2024', text }].
+// A missing or broken file just means no lines. `label` is worked out from the date when left out.
+let eventsPromise;
+let eventList = [];
+export const loadEvents = () => (eventsPromise ??= fetch('content/chart-events.json').then((r) => (r.ok ? r.json() : [])).catch(() => [])
+  .then((list) => {
+    eventList = (Array.isArray(list) ? list : []).filter((e) => e && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && !Number.isNaN(Date.parse(`${e.date}T00:00:00Z`)) && e.text).map((e) => ({
+      date: e.date,
+      text: String(e.text),
+      label: e.label ? String(e.label) : new Date(`${e.date}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }),
+    }));
+    return eventList;
+  }));
+export const getEvents = () => eventList;

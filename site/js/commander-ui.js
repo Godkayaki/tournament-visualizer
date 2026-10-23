@@ -2,7 +2,7 @@
 // of its meta share (or conversion) over time for the chosen region and an optional second one, and its numbers: conversion, seat
 // win rates... It uses the window's own filters (region, compare with, players, min. entries, period), so everything stays in step.
 // regional-ui.js owns the state and hands it over through the function given to initCommander().
-import { loadSeats, loadEntries, loadSpicy, artImgs } from './data.js';
+import { getEvents, loadSeats, loadEntries, loadSpicy, artImgs } from './data.js';
 import { deckUrl } from './tournament.js';
 import { $, esc, fmtDate, place as placeName, ord } from './utils.js';
 import { colorName, regionLabel, MIN_CONV_DECKS } from './regional.js';
@@ -94,7 +94,7 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
     <div class="rg-card2${isThin(tA) ? ' thin' : ''}"><i>Conversion</i><b>${pct(conversion(tA))}</b><small>${tA.cut.toLocaleString()} of ${tA.elig.toLocaleString()} decks${isThin(tA) && tA.decks ? ' · small sample' : ''}</small>${B ? versus(nameB, conversion(tA), conversion(tB)) : ''}</div>
     <div class="rg-card2${isThin(tA) ? ' thin' : ''}"><i>Top cut conversion</i><b>${pct(cutShare(tA))}</b><small>${tA.cut.toLocaleString()} of ${tA.cutAll.toLocaleString()} top cut decks</small>${B ? versus(nameB, cutShare(tA), cutShare(tB)) : ''}</div>`;
 
-  const events = eventPositions(shown);
+  const events = eventPositions(shown, getEvents());
   const tableRows = shown.list.map((b, i) => `<tr><th scope="row">${esc(b.title)}</th>${series.map((s) => `<td>${pct(s.values[i])}</td>`).join('')}</tr>`).join('');
   const notes = [];
   if (allowed) notes.push(`Shares are calculated over the decks of commanders with at least ${view.minEntries} entries in the world (Min. entries); change that filter above to widen or narrow them.`);
