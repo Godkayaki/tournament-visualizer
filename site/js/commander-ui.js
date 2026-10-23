@@ -73,8 +73,11 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
 
   const byConv = view.dMetric === 'conv';
   const metric = byConv ? conversion : share;
-  const series = [{ name: nameA, color: COLOR_A, values: A.buckets.map(metric), data: A.buckets }];
-  if (B) series.push({ name: nameB, color: COLOR_B, values: B.buckets.map(metric), data: B.buckets });
+  // A first bucket that only partly falls inside the period would look like a gap, so the chart starts at the next one (the cards still count it)
+  const trim = buckets.list[0]?.partial ? 1 : 0;
+  const shown = { unit: buckets.unit, list: buckets.list.slice(trim) };
+  const series = [{ name: nameA, color: COLOR_A, values: A.buckets.map(metric).slice(trim), data: A.buckets.slice(trim) }];
+  if (B) series.push({ name: nameB, color: COLOR_B, values: B.buckets.map(metric).slice(trim), data: B.buckets.slice(trim) });
   const unitName = byConv ? 'Conversion rate' : 'Meta share';
 
   const sub = `${names.join(' / ')}: ${unitName.toLowerCase()} in ${nameA}${B ? `, compared with ${nameB}` : ''}.`;
@@ -86,11 +89,12 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
     <div class="rg-card2${isThin(tA) ? ' thin' : ''}"><i>Conversion</i><b>${pct(conversion(tA))}</b><small>${tA.cut.toLocaleString()} of ${tA.elig.toLocaleString()} decks${isThin(tA) && tA.decks ? ' · small sample' : ''}</small>${B ? versus(nameB, conversion(tA), conversion(tB)) : ''}</div>
     <div class="rg-card2${isThin(tA) ? ' thin' : ''}"><i>Top cut conversion</i><b>${pct(cutShare(tA))}</b><small>${tA.cut.toLocaleString()} of ${tA.cutAll.toLocaleString()} top cut decks</small>${B ? versus(nameB, cutShare(tA), cutShare(tB)) : ''}</div>`;
 
-  const events = eventPositions(buckets);
-  const tableRows = A.buckets.map((_, i) => `<tr><th scope="row">${esc(buckets.list[i].title)}</th>${series.map((s) => `<td>${pct(s.values[i])}</td>`).join('')}</tr>`).join('');
+  const events = eventPositions(shown);
+  const tableRows = shown.list.map((b, i) => `<tr><th scope="row">${esc(b.title)}</th>${series.map((s) => `<td>${pct(s.values[i])}</td>`).join('')}</tr>`).join('');
   const notes = [];
   if (allowed) notes.push(`Shares are calculated over the decks of commanders with at least ${view.minEntries} entries in the world (Min. entries); change that filter above to widen or narrow them.`);
   notes.push(`Conversion only counts tournaments that had a top cut${byConv ? `; periods with none show a gap, and a commander with fewer than ${MIN_CONV_DECKS} decks in the period has a noisy line` : ''}.`);
+  if (trim) notes.push(`The first ${buckets.unit} of the period is only partly covered, so the chart starts after it (the numbers above still include it).`);
   notes.push('Seat win rate is the share of games this commander won from that seat, in four-player games.');
 
   const html = `
@@ -111,11 +115,11 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
   $('rg-dmetric').value = view.dMetric;
   $('rg-dgroup').value = view.dGroup;
   lineChart($('rg-chart'), {
-    labels: buckets.list.map((b) => b.label),
+    labels: shown.list.map((b) => b.label),
     series,
     events,
     title: `${unitName} of ${names.join(' / ')} over time`,
-    tooltip: (i) => `<b>${esc(buckets.list[i].title)}</b>` + series.map((s) => {
+    tooltip: (i) => `<b>${esc(shown.list[i].title)}</b>` + series.map((s) => {
       const d = s.data[i];
       const detail = byConv ? `${d.cut} of ${d.elig} decks` : `${d.decks} of ${d.total} decks`;
       return `<div><i class="sw ${s === series[0] ? 'a' : 'b'}"></i>${esc(s.name)}: <b>${pct(s.values[i])}</b> <small>${detail}</small></div>`;

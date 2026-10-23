@@ -34,6 +34,9 @@ export function makeBuckets(tournaments, months, group, now = Date.now() / 1000)
     b.label = new Date(b.start * 1000).toLocaleDateString('en-GB', { ...opts, timeZone: 'UTC' });
     b.title = unit === 'week' ? `Week of ${b.label}` : b.label;
   }
+  // With a "last N months" period the window starts mid-bucket, so the first bucket only has the tournaments after that moment: it looks
+  // like missing data (it fills up with a wider period). It is flagged so charts can leave it out; the totals still count its tournaments.
+  if (months && list.length > 1 && startOf(from) < from) list[0].partial = true;
   const bucketOf = (ts) => Math.min(list.length - 1, Math.max(0, index.get(startOf(ts)) ?? 0));
   return { unit, list, bucketOf };
 }
