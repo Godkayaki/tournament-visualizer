@@ -240,6 +240,7 @@
   background: #0d1117; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 20px rgba(0, 0, 0, .5); pointer-events: none; }
 .ch-tip[hidden], .ch-hover[hidden], .ch-dot[hidden] { display: none; }
 .ch-tip small { color: var(--dim); }
+.ch-tip small.ch-warn { color: #f0a93b; }
 .rg-table { margin: 6px 2px 0; color: var(--dim); font-size: 13px; }
 .rg-table summary { cursor: pointer; }
 .rg-table table { margin-top: 8px; border-collapse: collapse; font-variant-numeric: tabular-nums; }

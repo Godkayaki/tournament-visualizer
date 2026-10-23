@@ -76,8 +76,8 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
   // A first bucket that only partly falls inside the period would look like a gap, so the chart starts at the next one (the cards still count it)
   const trim = buckets.list[0]?.partial ? 1 : 0;
   const shown = { unit: buckets.unit, list: buckets.list.slice(trim) };
-  const series = [{ name: nameA, color: COLOR_A, values: A.buckets.map(metric).slice(trim), data: A.buckets.slice(trim) }];
-  if (B) series.push({ name: nameB, color: COLOR_B, values: B.buckets.map(metric).slice(trim), data: B.buckets.slice(trim) });
+  const series = [{ name: nameA, color: COLOR_A, values: A.buckets.map((b) => metric(b) ?? 0).slice(trim), data: A.buckets.slice(trim) }]; // a period with no data is drawn at 0% (the tooltip says so)
+  if (B) series.push({ name: nameB, color: COLOR_B, values: B.buckets.map((b) => metric(b) ?? 0).slice(trim), data: B.buckets.slice(trim) });
   const unitName = byConv ? 'Conversion rate' : 'Meta share';
 
   const sub = `${names.join(' / ')}: ${unitName.toLowerCase()} in ${nameA}${B ? `, compared with ${nameB}` : ''}.`;
@@ -122,7 +122,9 @@ function dataTab({ meta, view, tournaments, allowed }, id) {
     tooltip: (i) => `<b>${esc(shown.list[i].title)}</b>` + series.map((s) => {
       const d = s.data[i];
       const detail = byConv ? `${d.cut} of ${d.elig} decks` : `${d.decks} of ${d.total} decks`;
-      return `<div><i class="sw ${s === series[0] ? 'a' : 'b'}"></i>${esc(s.name)}: <b>${pct(s.values[i])}</b> <small>${detail}</small></div>`;
+      const swatch = `<i class="sw ${s === series[0] ? 'a' : 'b'}"></i>${esc(s.name)}:`;
+      if (metric(d) === null) return `<div>${swatch} <b>0%</b> <small class="ch-warn">⚠ No data this ${shown.unit}</small></div>`;
+      return `<div>${swatch} <b>${pct(s.values[i])}</b> <small>${detail}</small></div>`;
     }).join(''),
   });
   };

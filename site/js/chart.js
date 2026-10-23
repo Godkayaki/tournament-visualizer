@@ -80,11 +80,11 @@ function render(el, { labels, series, tooltip, title, events = [], integer = fal
     const box = el.querySelector('svg').getBoundingClientRect();
     const px = ((e.clientX - box.left) / box.width) * width;
     const i = n > 1 ? Math.min(n - 1, Math.max(0, Math.round(((px - m.l) / w) * (n - 1)))) : 0;
-    hover.hidden = false; tip.hidden = false;
+    hover.removeAttribute('hidden'); tip.hidden = false; // (SVG elements have no .hidden property, only the attribute)
     cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i));
     series.forEach((s, k) => {
       const v = s.values[i];
-      dots[k].hidden = v === null;
+      dots[k].toggleAttribute('hidden', v === null);
       if (v !== null) { dots[k].setAttribute('cx', x(i)); dots[k].setAttribute('cy', y(v)); }
     });
     tip.innerHTML = tooltip(i) + events.filter((e) => Math.abs(e.pos - i) <= 0.5).map((e) => `<div class="ch-ev"><b>${esc(e.label)}</b> ${esc(e.text)}</div>`).join('');
@@ -92,7 +92,7 @@ function render(el, { labels, series, tooltip, title, events = [], integer = fal
     tip.style.left = `${tx > box.width * 0.6 ? tx - tip.offsetWidth - 12 : tx + 12}px`;
     tip.style.top = '8px';
   };
-  const hide = () => { hover.hidden = true; tip.hidden = true; };
+  const hide = () => { hover.setAttribute('hidden', ''); tip.hidden = true; };
   const hit = el.querySelector('.ch-hit');
   hit.addEventListener('pointermove', show);
   hit.addEventListener('pointerdown', show);
