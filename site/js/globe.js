@@ -13,6 +13,7 @@ const RADII = [5, 3, 1.6, 0.8, 0.3, 0.08]; // smaller = more, less-merged bubble
 const tierOf = (alt) => (alt > 2.2 ? 0 : alt > 1.6 ? 1 : alt > 1.0 ? 2 : alt > 0.6 ? 3 : alt > 0.3 ? 4 : 5);
 
 let world;
+let spinPaused = false; // the Space shortcut: auto-rotate stays off until pressed again
 
 export function initGlobe() {
   world = Globe()($('globe'))
@@ -63,6 +64,8 @@ export function initGlobe() {
     if (!$('area').hidden || !$('modal').hidden) { // a bubble list or popup is open: stay still, restart the idle clock
       ctl.autoRotate = false;
       lastActivity = Date.now();
+    } else if (spinPaused) {
+      ctl.autoRotate = false;
     } else if (!ctl.autoRotate && Date.now() - lastActivity > IDLE_MS) {
       ctl.autoRotate = true; // same speed as the initial spin
     }
@@ -74,6 +77,24 @@ export function initGlobe() {
   });
   addEventListener('resize', () => world.width(innerWidth).height(innerHeight));
   return world;
+}
+
+// Keyboard controls (see keys.js): rotate, zoom, pause the spin
+export function panBy(dLat, dLng) {
+  const { lat, lng, altitude } = world.pointOfView();
+  const k = Math.min(25, 4 + 10 * altitude) / 15; // bigger steps when zoomed out, finer when close
+  let nl = lng + dLng * 15 * k;
+  if (nl > 180) nl -= 360; else if (nl < -180) nl += 360;
+  world.pointOfView({ lat: Math.max(-85, Math.min(85, lat + dLat * 15 * k)), lng: nl, altitude }, 250);
+}
+export function zoomBy(factor) {
+  const { lat, lng, altitude } = world.pointOfView();
+  world.pointOfView({ lat, lng, altitude: Math.max(0.12, Math.min(4, altitude * factor)) }, 250);
+}
+export function toggleSpin() {
+  spinPaused = !spinPaused;
+  world.controls().autoRotate = false;
+  return spinPaused;
 }
 
 // What the zoom level was when the data arrived (the first render needs it before any zoom event)

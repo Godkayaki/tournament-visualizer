@@ -11,6 +11,7 @@ import { initPreview } from './preview.js';
 import { initTournament, closeModal } from './tournament.js';
 import { initRegional, closeRegional } from './regional-ui.js';
 import { initColorPicker } from './tools.js';
+import { initKeys } from './keys.js';
 
 loadArt(); // start the commander-art request right away; the list and the popup reuse it
 loadEvents(); // chart event lines (content/chart-events.json)
@@ -22,6 +23,7 @@ initList();
 initTournament();
 initRegional();
 initColorPicker();
+initKeys();
 
 // Touch screens have no scroll wheel: say "pinch" in the hint under the title
 if (matchMedia('(hover: none)').matches) document.querySelector('#title p').textContent = 'Drag to rotate, pinch to zoom.';

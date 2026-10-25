@@ -102,12 +102,7 @@
   <header id="title">
     <img src="static/logo.svg" alt="" fetchpriority="high" decoding="async">
     <div>
-      <div class="title-row">
-        <h1>EDHGlobe</h1>
-        <a class="rg-info title-info" href="methodology" target="_blank" rel="noopener" aria-label="More info (opens in a new tab)" title="More info">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.4" r=".6" fill="currentColor"/></svg>
-        </a>
-      </div>
+      <h1>EDHGlobe</h1>
       <p>Drag to rotate, scroll to zoom.</p>
     </div>
   </header>
@@ -139,6 +134,38 @@
     <button id="recent" type="button" aria-pressed="false" disabled>Recent</button>
     <button id="featured" type="button" aria-pressed="false" hidden>Featured</button>
     <button id="regional-narrow" class="regional-open" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Regional Metagame</button> <!-- shown by js/list.js only when content/featured.json has upcoming events -->
+  </div>
+
+  <!-- Keyboard shortcuts window (js/keys.js) -->
+  <div id="keys-modal" hidden>
+    <div class="card keys" role="dialog" aria-modal="true" aria-labelledby="keys-title">
+      <button class="close" id="keys-close" type="button" aria-label="Close">×</button>
+      <div class="keys-body">
+        <h2 id="keys-title">Keyboard shortcuts</h2>
+        <h3>Globe</h3>
+        <dl>
+          <dt><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd></dt><dd>Rotate the globe</dd>
+          <dt><kbd>+</kbd> <kbd>−</kbd></dt><dd>Zoom in / out</dd>
+          <dt><kbd>Space</kbd></dt><dd>Pause or resume the automatic rotation</dd>
+        </dl>
+        <h3>Lists and windows</h3>
+        <dl>
+          <dt><kbd>R</kbd></dt><dd>Recent tournaments</dd>
+          <dt><kbd>F</kbd></dt><dd>Featured tournaments (when there are any)</dd>
+          <dt><kbd>M</kbd></dt><dd>Regional Metagame</dd>
+          <dt><kbd>Esc</kbd></dt><dd>Close the open window or list (in Regional Metagame, go back first)</dd>
+        </dl>
+        <h3>Filters</h3>
+        <dl>
+          <dt><kbd>P</kbd></dt><dd>Players: next option</dd>
+          <dt><kbd>D</kbd></dt><dd>Period: next option</dd>
+        </dl>
+        <h3>Help</h3>
+        <dl>
+          <dt><kbd>?</kbd></dt><dd>Show or hide this window</dd>
+        </dl>
+      </div>
+    </div>
   </div>
 
   <aside id="area" hidden>
@@ -265,7 +292,7 @@
   <div id="meta">
     <!-- Tool buttons, no text. Right to left: color picker, accessibility, keyboard shortcuts (the last two are placeholders for now) -->
     <div class="meta-tools">
-      <button class="tool" id="tool-keys" type="button" aria-disabled="true" aria-label="Keyboard shortcuts (coming soon)" title="Keyboard shortcuts (coming soon)">
+      <button class="tool" id="tool-keys" type="button" aria-haspopup="dialog" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M18 14h.01M9.5 14h5"/></svg>
       </button>
       <button class="tool" id="tool-access" type="button" aria-disabled="true" aria-label="Accessibility (coming soon)" title="Accessibility (coming soon)">
