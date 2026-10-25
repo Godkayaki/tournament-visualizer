@@ -288,3 +288,38 @@ footer { position: fixed; bottom: 12px; left: 20px; color: var(--dim); font-size
 .keys dd { margin: 0; color: var(--text); font-size: 14px; }
 kbd { display: inline-block; min-width: 26px; padding: 2px 7px; text-align: center; font: 600 12px/1.5 ui-monospace, Consolas, monospace;
   color: var(--text); background: #161b22; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; }
+
+/* ---- Accessibility menu (bottom-right tools) ---- */
+#a11y-menu { position: absolute; right: 0; bottom: calc(100% + 8px); width: 290px; padding: 12px 14px 12px; z-index: 30;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 30px rgba(0, 0, 0, .5); animation: pop .12s ease-out; text-align: left; }
+#a11y-menu[hidden] { display: none; }
+#a11y-menu h3 { margin: 0 0 8px; font-size: 14px; color: var(--text); }
+.a11y-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); color: var(--text); font-size: 13px; line-height: 1.3; cursor: pointer; }
+.a11y-row small { display: block; color: var(--dim); font-size: 11.5px; }
+.a11y-row input { width: 18px; height: 18px; flex: none; accent-color: var(--accent); cursor: pointer; }
+.a11y-seg { display: flex; flex: none; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.a11y-seg button { border: 0; background: transparent; color: var(--text); font: inherit; font-size: 12px; padding: 4px 8px; cursor: pointer; }
+.a11y-seg button + button { border-left: 1px solid var(--line); }
+.a11y-seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+#a11y-reset { margin-top: 8px; width: 100%; padding: 5px; font: inherit; font-size: 12px; color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+#a11y-reset:hover { color: var(--text); border-color: var(--accent); }
+
+/* Text size: the page is laid out in pixels, so the interface (not the globe) is scaled up as a whole */
+html[data-text="1"] { --zoom: 1.15; }
+html[data-text="2"] { --zoom: 1.3; }
+html[data-text="1"] :is(#title, #filters, #statsbar, #area, #regional, #meta, footer, .card, #peek),
+html[data-text="2"] :is(#title, #filters, #statsbar, #area, #regional, #meta, footer, .card, #peek) { zoom: var(--zoom); }
+
+/* High contrast: brighter text and borders */
+html.a11y-contrast { --text: #fff; --dim: #d0d7e0; --line: #8b949e; }
+html.a11y-contrast #stats, html.a11y-contrast footer, html.a11y-contrast #meta { color: #fff; text-shadow: 0 0 4px #000, 0 1px 6px #000; }
+html.a11y-contrast .bubble .dot { border-width: 3px; }
+html.a11y-contrast :focus-visible { outline-width: 3px; }
+html.a11y-contrast #area .sub, html.a11y-contrast .sub { color: #d0d7e0; }
+
+/* Reduce motion (the system setting or the menu): nothing animates */
+html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+
+/* Starry background off */
+html.a11y-nostars #stars { display: none; }
+html.a11y-nostars body { background: #05080d; }

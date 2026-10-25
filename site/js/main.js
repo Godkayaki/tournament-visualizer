@@ -10,7 +10,7 @@ import { initList, closeArea, onFiltersChanged, setFeatured } from './list.js';
 import { initPreview } from './preview.js';
 import { initTournament, closeModal } from './tournament.js';
 import { initRegional, closeRegional } from './regional-ui.js';
-import { initColorPicker } from './tools.js';
+import { initColorPicker, initAccessMenu } from './tools.js';
 import { initKeys } from './keys.js';
 
 loadArt(); // start the commander-art request right away; the list and the popup reuse it
@@ -23,6 +23,7 @@ initList();
 initTournament();
 initRegional();
 initColorPicker();
+initAccessMenu();
 initKeys();
 
 // Touch screens have no scroll wheel: say "pinch" in the hint under the title

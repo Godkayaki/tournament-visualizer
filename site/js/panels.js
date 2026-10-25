@@ -1,7 +1,7 @@
 // Open/close for the tournament list and the tournament popup, generic over the element.
 // CSS animates them (see "open/close" in style.css);
 // closing waits for the animation to finish before the element is really hidden.
-const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('reduce-motion'); // system setting or the accessibility menu
 // `scrollers`: the scrollable elements inside the panel, which start from the top on every open. This has to happen
 // once the panel is visible: a hidden element ignores scrollTop, and the browser would then restore its old scroll position.
 export function openPanel(el, ...scrollers) {

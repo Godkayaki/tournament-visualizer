@@ -51,7 +51,7 @@ export function initGlobe() {
 
   world.renderer().setPixelRatio(Math.min(devicePixelRatio, 1.5)); // big win on hi-dpi screens
   world.pointOfView({ lat: 38, lng: -39, altitude: 2.5 }); // initial view: mid-Atlantic, between Spain and the US
-  world.controls().autoRotate = true;
+  world.controls().autoRotate = !window.EDHA11y?.get('motion');
   world.controls().autoRotateSpeed = 0.2;
   // Auto-rotate: stops on any drag/zoom, resumes after IDLE_MS of no movement,
   // but only while looking at the bare globe (no bubble list or tournament popup open).
@@ -61,7 +61,10 @@ export function initGlobe() {
   ctl.addEventListener('start', () => { ctl.autoRotate = false; lastActivity = Date.now(); });
   ctl.addEventListener('end', () => { lastActivity = Date.now(); });
   setInterval(() => {
-    if (!$('area').hidden || !$('modal').hidden) { // a bubble list or popup is open: stay still, restart the idle clock
+    if (window.EDHA11y?.get('motion')) { // "reduce motion": the globe never turns by itself
+      ctl.autoRotate = false;
+      lastActivity = Date.now();
+    } else if (!$('area').hidden || !$('modal').hidden) { // a bubble list or popup is open: stay still, restart the idle clock
       ctl.autoRotate = false;
       lastActivity = Date.now();
     } else if (spinPaused) {
@@ -76,6 +79,7 @@ export function initGlobe() {
     if (t !== state.tier) { state.tier = t; render(); }
   });
   addEventListener('resize', () => world.width(innerWidth).height(innerHeight));
+  addEventListener('a11ychange', render); // the color-blind palette changes the bubbles
   return world;
 }
 
@@ -124,7 +128,11 @@ function cluster(items, r) {
 }
 
 // yellow (few tournaments) -> red (many)
-const heat = (n) => { const t = Math.min(1, Math.log10(n) / 1.6); return `hsl(${46 - 46 * t}, 95%, ${60 - 8 * t}%)`; };
+const heat = (n) => {
+  const t = Math.min(1, Math.log10(n) / 1.6);
+  if (window.EDHA11y?.get('colorblind')) return `hsl(${52 + 173 * t}, ${95 - 25 * t}%, ${62 - 27 * t}%)`; // yellow -> blue: also reads as light -> dark for any color vision
+  return `hsl(${46 - 46 * t}, 95%, ${60 - 8 * t}%)`;
+};
 
 function bubble(d) {
   const n = d.items.length;

@@ -73,6 +73,7 @@
     } catch (e) { __early = {}; }
   </script>
   <script src="js/theme.js"></script>
+  <script src="js/a11y.js"></script>
   <!-- Google tag (gtag.js). The commands are queued right away, but the library itself is only fetched once the page has loaded and the
        browser is idle (or after 4 s at most), so it doesn't compete with the globe for the main thread during startup -->
   <script>
@@ -295,9 +296,27 @@
       <button class="tool" id="tool-keys" type="button" aria-haspopup="dialog" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M18 14h.01M9.5 14h5"/></svg>
       </button>
-      <button class="tool" id="tool-access" type="button" aria-disabled="true" aria-label="Accessibility (coming soon)" title="Accessibility (coming soon)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.7" fill="currentColor" stroke="none"/><path d="M5 8.5l7 1.4 7-1.4M12 10v5M12 15l-3 5.5M12 15l3 5.5"/></svg>
-      </button>
+      <div class="tool-wrap">
+        <button class="tool" id="tool-access" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="a11y-menu" aria-label="Accessibility settings" title="Accessibility settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.7" fill="currentColor" stroke="none"/><path d="M5 8.5l7 1.4 7-1.4M12 10v5M12 15l-3 5.5M12 15l3 5.5"/></svg>
+        </button>
+        <div id="a11y-menu" role="dialog" aria-label="Accessibility settings" hidden>
+          <h3>Accessibility</h3>
+          <div class="a11y-row" role="group" aria-labelledby="a11y-text-l">
+            <span id="a11y-text-l">Text size</span>
+            <div class="a11y-seg">
+              <button type="button" data-text="0" aria-pressed="true">Normal</button>
+              <button type="button" data-text="1" aria-pressed="false">Large</button>
+              <button type="button" data-text="2" aria-pressed="false">Larger</button>
+            </div>
+          </div>
+          <label class="a11y-row"><span>High contrast</span><input type="checkbox" data-k="contrast"></label>
+          <label class="a11y-row"><span>Reduce motion <small>no auto-rotation or animations</small></span><input type="checkbox" data-k="motion"></label>
+          <label class="a11y-row"><span>Color-blind friendly bubbles <small>yellow to blue</small></span><input type="checkbox" data-k="colorblind"></label>
+          <label class="a11y-row"><span>Starry background</span><input type="checkbox" data-k="stars"></label>
+          <button type="button" id="a11y-reset">Reset to defaults</button>
+        </div>
+      </div>
       <div class="tool-wrap">
         <button class="tool" id="tool-color" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="color-menu" aria-label="Accent color" title="Accent color"><span class="swatch"></span></button>
         <div id="color-menu" role="menu" aria-label="Accent color" hidden></div>
