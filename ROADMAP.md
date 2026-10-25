@@ -5,7 +5,7 @@
 - Tournaments without coordinates (online events) are skipped right now. My idea is to have a separate list that is somehow accessible (thinking about adding the moon and be clickable lol).
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
   - **Shuffleup** -> Still in beta, no API documentation visible, it looks complicated.
-  - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
+  - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information in a consistent way.
 - ~~Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?~~ *It seems like Topdeck does not return future tournaments, I've tried a couple things with no avail.*
 - Add accesibility settings.
 - Increase performance (not that it's bad, but you can always do better) and fix bugs/issues;
