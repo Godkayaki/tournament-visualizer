@@ -6,14 +6,15 @@
 - Still researching for other cEDH platforms where tournaments are organized, to see if we can also add that data. These are the ones I'm currently looking at;
   - **Shuffleup** -> Still in beta, no API documentation visible, it looks complicated.
   - **God of commander** -> Japanese cEDH tournament from Hareruya. It's really difficult to actually get the information.
-- Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?
+- ~~Possibly add the option to view the ***future*** oncoming tournaments, displaying location, link, spots occupied and totally available and maybe even price as well as their topdeck.gg link?~~ *It seems like Topdeck does not return future tournaments, I've tried a couple things with no avail.*
 - Add accesibility settings & manual keyboard shortcuts + visual menu of them.
 - Increase performance (not that it's bad, but you can always do better) and fix bugs/issues;
   - ~~Improved font loading (font is now already locally)~~
   - ~~Data on 1st month of chart not being displayed~~
   - ~~Topdeck giving data before jun 2025 in form of moxfield links instead of commander data, find way to gather that data for more historical data~~
   - ~~Commander banners being centered on their face and not the center~~
-  - **Fix mdfc commanders data (Kefka, Ral, Etali...)** - FIX ASAP
+  - ~~Fix mdfc commanders data (Kefka, Ral, Etali...) - FIX ASAP~~
+  - ~~Fix stars background flicker~~
 
 <details>
 

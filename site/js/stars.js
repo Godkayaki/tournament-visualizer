@@ -40,9 +40,18 @@ export function initStars(world) {
   $('stars-far').style.backgroundImage = starTile(260, 0.7, 12345);
   $('stars-near').style.backgroundImage = starTile(70, 1.6, 98765);
   const layers = [[$('stars-far'), 0.5], [$('stars-near'), 1.2]];
+  // Longitude jumps from +180 to -180 when the globe crosses the Pacific (the antimeridian). Using it directly made the stars leap, so we
+  // add up the real movement instead: each change is measured the short way round, which gives a continuous value that never jumps.
+  let prevLng = null, unwrapped = 0;
   function parallax() {
     const { lat, lng } = world.pointOfView();
-    for (const [el, k] of layers) el.style.transform = `translate3d(${wrap(lng * k * 6)}px, ${wrap(lat * k * 4)}px, 0)`;
+    if (prevLng !== null) {
+      let d = lng - prevLng;
+      if (d > 180) d -= 360; else if (d < -180) d += 360;
+      unwrapped += d;
+    } else unwrapped = lng;
+    prevLng = lng;
+    for (const [el, k] of layers) el.style.transform = `translate3d(${wrap(unwrapped * k * 6)}px, ${wrap(lat * k * 4)}px, 0)`;
   }
   world.controls().addEventListener('change', parallax);
   parallax();
