@@ -39,7 +39,7 @@ function draw() {
   const { list, bucketOf } = makeBuckets(mine, 0, 'week', now);
   while (list.length && list[list.length - 1].start + 7 * DAY > now) list.pop(); // the current week isn't over: it would show a false dip
   const counts = list.map(() => 0);
-  for (const t of mine) { const i = bucketOf(t.d); if (i < counts.length && list[i].start <= t.d) counts[i]++; }
+  for (const t of mine) { const i = bucketOf(t.d); if (i < counts.length && list[i].start <= t.d && t.d < list[i].start + 7 * DAY) counts[i]++; } // bucketOf clamps to the last bucket, so tournaments of the unfinished week (removed above) must not fall into the week before it
   const fitted = trend(counts);
   lineChart(box, {
     labels: list.map((b) => fmt(b.start, { month: 'short', year: 'numeric' })),

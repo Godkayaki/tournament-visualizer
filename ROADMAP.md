@@ -15,6 +15,7 @@
   - ~~Commander banners being centered on their face and not the center~~
   - ~~Fix mdfc commanders data (Kefka, Ral, Etali...) - FIX ASAP~~
   - ~~Fix stars background flicker~~
+  - Fix tournaments chart last week data
 
 <details>
 
