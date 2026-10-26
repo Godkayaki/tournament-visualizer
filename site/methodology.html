@@ -47,10 +47,10 @@
 
   <main class="policy">
     <h2>More information</h2>
-    <p class="updated">Last updated: October 11, 2026</p>
+    <p class="updated">Last updated: October 25, 2026</p>
 
     <div class="summary">
-      <p><strong>TLDR:</strong> every figure in the <em>Regional Metagame</em> window is counted from the public results of the tournaments on TopDeck.gg that EDHGlobe shows on the globe. <b>Meta share</b> is the percentage of decks (with a listed commander, from commanders that pass the <em>Min. entries</em> filter) that played a given commander, and <b>conversion</b> is the percentage of those decks that made the top cut, only counting tournaments that had one. Nothing is estimated or predicted, and nothing is added by hand (the smoothed trend line in the tournaments-per-week chart is the only fitted value).</p>
+      <p><strong>TLDR:</strong> every figure in the <em>Regional Metagame</em> window is counted from the public results of the tournaments on TopDeck.gg that EDHGlobe shows on the globe. <b>Meta share</b> is the percentage of decks (with a listed commander, from commanders that pass the <em>Min. entries</em> filter) that played a given commander, and <b>conversion</b> is the percentage of those decks that made the top cut, only counting tournaments that had one. Nothing is estimated or predicted, and nothing is added by hand (the smoothed trend lines in the two weekly charts are the only fitted values).</p>
     </div>
 
     <h3>Tournaments per week</h3>
@@ -59,6 +59,12 @@
     <p class="rg-legend"><i class="a"></i>Tournaments per week <i class="b"></i>Trend</p>
     <div class="rg-chart" id="tpw-chart"><noscript>The chart needs JavaScript.</noscript></div>
     <p class="mt-note" id="tpw-note"></p>
+
+    <h3>Unique players per week</h3>
+    <p>How many different players took part in at least one of those tournaments each week. A player who plays several tournaments in the same week is counted once, so this is people, not entries. Players are told apart by their TopDeck player id. It uses the same tournaments as the chart above, so the <em>Players</em> filter above applies here too, and the current week is left out until it ends. The orange line is the same kind of smoothed trend.</p>
+    <p class="rg-legend"><i class="a"></i>Unique players per week <i class="b"></i>Trend</p>
+    <div class="rg-chart" id="upl-chart"><noscript>The chart needs JavaScript.</noscript></div>
+    <p class="mt-note" id="upl-note"></p>
 
     <h3>Where the data comes from</h3>
     <ul>
@@ -183,6 +189,14 @@
       <li>A tournament belongs to the <strong>country</strong> whose borders contain the location TopDeck lists for it. It is the location of the event, not where the players live. If the point falls just outside every border (a coast, a small island), it is assigned to the nearest country if that is within 50 km.</li>
       <li>Tournaments that can't be placed in a country count for <strong>World</strong> only.</li>
       <li>Each country belongs to a <strong>continent</strong>, according to the same borders dataset. Nothing is merged below that: Catalonia is part of Spain, for example, and regions inside a country aren't separated.</li>
+    </ul>
+
+    <h3>Colors</h3>
+    <ul>
+      <li>The color of a commander is its <strong>color identity</strong> on Scryfall. For a partner pair it is the union of both commanders.</li>
+      <li>The filter matches the <strong>exact</strong> identity: picking W and U shows only white-blue commanders, not every commander that contains white. With only C selected you get the colorless ones. No color selected shows everything.</li>
+      <li>The five-color button (the colour wheel) is a shortcut for picking all of W, U, B, R and G at once. It and the colorless button are exclusive: choosing either clears the other colors, and choosing any single color clears them.</li>
+      <li>Commanders whose colors couldn't be looked up are hidden while a color filter is active, and the window says how many decks that affects.</li>
     </ul>
 
     <h3>Comparing regions</h3>

@@ -30,6 +30,7 @@ function trend(values) {
 const fmt = (ts, opts) => new Date(ts * 1000).toLocaleDateString('en-GB', { ...opts, timeZone: 'UTC' });
 
 let tournaments = [];
+let players = null; // data/players.json: { tournament id: [player numbers as differences] }, null until loaded / when missing
 
 function draw() {
   const min = +select.value;
@@ -40,20 +41,46 @@ function draw() {
   while (list.length && list[list.length - 1].start + 7 * DAY > now) list.pop(); // the current week isn't over: it would show a false dip
   const counts = list.map(() => 0);
   for (const t of mine) { const i = bucketOf(t.d); if (i < counts.length && list[i].start <= t.d && t.d < list[i].start + 7 * DAY) counts[i]++; } // bucketOf clamps to the last bucket, so tournaments of the unfinished week (removed above) must not fall into the week before it
+  drawChart(box, $('tpw-note'), { name: 'Tournaments', title: 'Tournaments per week', unit: ['tournament', 'tournaments'], list, counts });
+  drawPlayers(mine, list);
+}
+
+// Unique players per week: the same weeks as above, each week counting every player once, whatever the number of tournaments they played
+function drawPlayers(mine, list) {
+  const out = $('upl-chart'), note = $('upl-note');
+  if (!players) { out.textContent = "The player data isn't available yet. It appears after the next data update."; note.textContent = ''; return; }
+  const sets = list.map(() => new Set());
+  for (const t of mine) {
+    const i = bucketIndex(list, t.d);
+    const nums = players.t?.[t.id];
+    if (i < 0 || !nums) continue;
+    let n = 0;
+    for (const d of nums) { n += d; sets[i].add(n); }
+  }
+  drawChart(out, note, { name: 'Unique players', title: 'Unique players per week', unit: ['player', 'players'], list, counts: sets.map((x) => x.size) });
+}
+const $ = (id) => document.getElementById(id);
+// The week a time falls in, or -1 (the weeks of `list` are consecutive Mondays; the unfinished week isn't in it)
+const bucketIndex = (list, ts) => { const i = Math.floor((ts - list[0].start) / (7 * DAY)); return i >= 0 && i < list.length ? i : -1; };
+
+function drawChart(el, noteEl, { name, title, unit, list, counts }) {
   const fitted = trend(counts);
-  lineChart(box, {
+  lineChart(el, {
     labels: list.map((b) => fmt(b.start, { month: 'short', year: 'numeric' })),
     series: [
-      { name: 'Tournaments', color: 'var(--accent)', values: counts },
+      { name, color: 'var(--accent)', values: counts },
       { name: 'Trend', color: '#f0a93b', values: fitted, width: 2.5, noDots: true },
     ],
-    title: 'Tournaments per week',
+    title,
     integer: true,
     yLabel: (v) => String(Math.round(v)),
-    tooltip: (i) => `<b>Week of ${esc(fmt(list[i].start, { day: 'numeric', month: 'short', year: 'numeric' }))}</b><div><i class="sw a"></i>${counts[i].toLocaleString()} ${counts[i] === 1 ? 'tournament' : 'tournaments'}</div>${fitted[i] === null ? '' : `<div><i class="sw b"></i>Trend: about ${fitted[i].toFixed(1)}</div>`}`,
+    tooltip: (i) => `<b>Week of ${esc(fmt(list[i].start, { day: 'numeric', month: 'short', year: 'numeric' }))}</b><div><i class="sw a"></i>${counts[i].toLocaleString()} ${counts[i] === 1 ? unit[0] : unit[1]}</div>${fitted[i] === null ? '' : `<div><i class="sw b"></i>Trend: about ${fitted[i].toFixed(1)}</div>`}`,
   });
   const total = counts.reduce((a, b) => a + b, 0);
-  document.getElementById('tpw-note').textContent = `${total.toLocaleString()} tournaments from ${fmt(list[0].start, { day: 'numeric', month: 'short', year: 'numeric' })} to ${fmt(list[list.length - 1].start + 6 * DAY, { day: 'numeric', month: 'short', year: 'numeric' })}.`;
+  const span = `from ${fmt(list[0].start, { day: 'numeric', month: 'short', year: 'numeric' })} to ${fmt(list[list.length - 1].start + 6 * DAY, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+  noteEl.textContent = unit[1] === 'players'
+    ? `${list.length} weeks ${span}; the busiest had ${Math.max(...counts).toLocaleString()} unique players.` // summing players of different weeks would count people twice
+    : `${total.toLocaleString()} tournaments ${span}.`;
 }
 
 try {
@@ -61,6 +88,7 @@ try {
   if (!r.ok) throw new Error(r.status);
   const { tournaments: all } = await r.json();
   tournaments = all.filter((t) => !blockedBy(t.n));
+  try { const pr = await fetch('data/players.json'); if (pr.ok) players = await pr.json(); } catch { /* the chart says the data isn't there yet */ }
   draw();
   select.addEventListener('change', draw);
 } catch {

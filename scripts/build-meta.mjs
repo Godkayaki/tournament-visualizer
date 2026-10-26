@@ -53,7 +53,7 @@ import { fileURLToPath } from 'node:url';
 
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
 const DECKS = fileURLToPath(new URL('../.cache/decks/', import.meta.url)); // raw card lists written by fetch-data.mjs
-const SCHEMA = 8; // bump when the layout or the counting rules change, so cached files get rebuilt
+const SCHEMA = 9; // bump when the layout or the counting rules change, so cached files get rebuilt
 const NEAREST_KM = 50;
 const SCRYFALL_URL = process.env.SCRYFALL_URL || 'https://api.scryfall.com';
 const SCRYFALL_HEADERS = { 'User-Agent': 'cedh-globe/1.0 (https://github.com/Godkayaki/tournament-visualizer)', Accept: 'application/json', 'Content-Type': 'application/json' };
@@ -195,10 +195,25 @@ let withLists = 0;
 let seatTournaments = 0;
 let decks = 0, noCommander = 0, noStandings = 0, withCut = 0, cutDecks = 0;
 const unplaced = [];
+// Unique players per tournament (for the "unique players per week" chart on the methodology page): every player gets a small number, and each
+// tournament lists the numbers of its players, sorted and stored as differences (so the file stays small). A player is TopDeck's player id
+// (the name when there is none). The browser applies the name filter and the size filter itself, so it can count weeks any way it needs.
+const playerNum = new Map();
+const playersOut = {};
 for (const tour of index.tournaments) {
   let rows;
   try { rows = JSON.parse(await readFile(`${OUT}t/${tour.f}.json`, 'utf8')); }
   catch { noStandings++; continue; }
+
+  const nums = new Set();
+  for (const p of rows) {
+    const key = p.i || (p.n ? `n:${String(p.n).trim().toLowerCase()}` : '');
+    if (!key) continue;
+    if (!playerNum.has(key)) playerNum.set(key, playerNum.size);
+    nums.add(playerNum.get(key));
+  }
+  let prevNum = 0;
+  playersOut[tour.id] = [...nums].sort((a, b) => a - b).map((n) => { const d = n - prevNum; prevNum = n; return d; });
 
   let lists = null; // this tournament's card lists: { n: [names], d: { player id: [indexes] } }
   try { lists = JSON.parse(await readFile(`${DECKS}${tour.f}.json`, 'utf8')); } catch { /* none for this one */ }
@@ -309,11 +324,13 @@ for (const [id, a] of listsOut) {
 }
 await mkdir(OUT + 'c/', { recursive: true });
 for (const [id, list] of entriesOut) await writeFile(`${OUT}c/${id}.json`, JSON.stringify(list));
+await writeFile(OUT + 'players.json', JSON.stringify({ schema: 1, generated: index.generated, t: playersOut }));
 if (seatTournaments) await writeFile(OUT + 'seats.json', JSON.stringify({ schema: 1, generated: index.generated, t: seatsOut }));
 
 const tournaments = Object.keys(t).length;
 console.log(`Wrote meta.json: ${tournaments} tournaments, ${decks} decks, ${commanders.length} commanders, ${countries.length} countries`);
 console.log(`Entries: ${entriesOut.size} commander files in data/c/`);
+console.log(`Players: ${playerNum.size} distinct players in ${Object.keys(playersOut).length} tournaments (data/players.json)`);
 console.log(`Spicy cards: ${withLists} tournaments with card lists, ${spicyFiles} commander files in data/s/ (${(spicyBytes / 1e6).toFixed(1)} MB)${withLists ? '' : ' (none yet: they appear after a full fetch-data run)'}`);
 console.log(`Seats: ${seatTournaments} tournaments with per-commander seat data${seatTournaments ? '' : ' (none yet: they appear after a full fetch-data run)'}`);
 console.log(`${withCut} of ${tournaments} tournaments have a top cut (${cutDecks} decks in it)`);
