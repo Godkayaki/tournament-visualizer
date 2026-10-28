@@ -93,6 +93,16 @@ export const loadSpicy = (id) => {
   return spicyCache.get(id);
 };
 
+// Every card that appears in a card list (data/cards.json: { n: [names, alphabetical] }) and, per commander, the cards of each of its decks
+// (data/f/<id>.json, for the Find card tab). null when the files don't exist (the data hasn't been rebuilt since they were added).
+let cardsPromise;
+export const loadCards = () => (cardsPromise ??= fetch('data/cards.json').then((r) => (r.ok ? r.json() : null)).catch(() => null));
+const findCache = new Map();
+export const loadFind = (id) => {
+  if (!findCache.has(id)) findCache.set(id, fetch(`data/f/${id}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+  return findCache.get(id);
+};
+
 // Per-commander seat results (built by scripts/build-meta.mjs from the rounds). Only the commander view needs it, so it is fetched
 // on first use. null when the file doesn't exist yet (the data hasn't been fully rebuilt since seats were added).
 let seatsPromise;

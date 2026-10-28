@@ -439,7 +439,7 @@ function findTab(c, id) {
   return { html, sub, after: showMoreTournaments };
 }
 
-const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['pilots', 'Top Pilots'], ['regions', 'Region performance'], ['spicy', 'Spicy cards'], ['find', 'Find card']];
+const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['pilots', 'Top Pilots'], ['regions', 'Region performance'], ['spicy', 'Spicy cards'], ['find', 'View card data']];
 
 export function renderCommander() {
   const c = getContext();

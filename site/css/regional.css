@@ -300,3 +300,16 @@
 .rg-bannercards.on { opacity: 1; visibility: visible; transition: opacity .18s ease; }
 .rg-bannercards img { display: block; width: var(--cw, 300px); height: var(--ch, 418px); border-radius: 16px; background: #0d1117; box-shadow: 0 8px 30px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .08); }
 @media (prefers-reduced-motion: reduce) { .rg-bannercards, .rg-bannercards.on { transition: none; } }
+
+/* Find card tab: search box with suggestions, then the card's numbers and the decks that play it */
+.rg-find { position: relative; margin: 14px 0 12px; }
+.rg-find input { width: 100%; padding: 9px 12px; font: inherit; font-size: 14px; color: var(--text); background: #161b22; border: 1px solid var(--line); border-radius: 8px; }
+.rg-find input:focus { outline: none; border-color: var(--accent); }
+#rg-fsug { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 30px rgba(0, 0, 0, .5); }
+#rg-fsug[hidden] { display: none; }
+#rg-fsug li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 10px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+#rg-fsug li:hover, #rg-fsug li.on { background: #161b22; color: var(--accent); }
+#rg-fsug li small { color: var(--dim); flex: none; }
+#rg-fsug li.none { color: var(--dim); cursor: default; }
+#rg-fsug li.none:hover { background: none; color: var(--dim); }
+.rg-fhead { margin-bottom: 12px; }

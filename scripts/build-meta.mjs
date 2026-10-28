@@ -53,7 +53,7 @@ import { fileURLToPath } from 'node:url';
 
 const OUT = fileURLToPath(new URL('../site/data/', import.meta.url));
 const DECKS = fileURLToPath(new URL('../.cache/decks/', import.meta.url)); // raw card lists written by fetch-data.mjs
-const SCHEMA = 9; // bump when the layout or the counting rules change, so cached files get rebuilt
+const SCHEMA = 10; // bump when the layout or the counting rules change, so cached files get rebuilt
 const NEAREST_KM = 50;
 const SCRYFALL_URL = process.env.SCRYFALL_URL || 'https://api.scryfall.com';
 const SCRYFALL_HEADERS = { 'User-Agent': 'cedh-globe/1.0 (https://github.com/Godkayaki/tournament-visualizer)', Accept: 'application/json', 'Content-Type': 'application/json' };
@@ -189,6 +189,7 @@ const idOf = (names) => {
 const t = {};
 const seatsOut = {};
 const entriesOut = new Map(); // commander id -> rows of data/c/<id>.json
+const findOut = new Map();    // commander id -> [[row of data/c/<id>.json, [card names]], ...], for data/f/<id>.json (Find card tab)
 const listsOut = new Map();   // commander id -> { m, miss: [rows], cards: Map(name -> [rows]) }, for data/s/<id>.json
 const SPICY_MIN_DECKS = 3, SPICY_MAX_RATE = 0.35, SPICY_MIN_LISTS = 20;
 let withLists = 0;
@@ -233,6 +234,8 @@ for (const tour of index.tournaments) {
     const mine = lists?.d?.[p.i];
     if (mine) {
       acc.m++;
+      const decksOf = findOut.get(id) || findOut.set(id, []).get(id);
+      decksOf.push([rowsOf.length - 1, mine.map((ix) => lists.n[ix])]);
       for (const ix of mine) { const name = lists.n[ix]; const at = acc.cards.get(name); if (at) at.push(rowsOf.length - 1); else acc.cards.set(name, [rowsOf.length - 1]); }
     } else acc.miss.push(rowsOf.length - 1);
     if (Array.isArray(p.q) && p.q.length === 8) {
@@ -322,6 +325,27 @@ for (const [id, a] of listsOut) {
   await writeFile(`${OUT}s/${id}.json`, text);
   spicyFiles++; spicyBytes += text.length;
 }
+// Find card tab: data/cards.json is every card that appears in a card list (alphabetical); data/f/<commanderIndex>.json is
+//   { v: 1, d: [[row of c/<id>.json, card, card, ...], ...] }  one entry per deck with a card list; the cards are indexes into cards.json,
+//   sorted, stored as differences from the one before (the first from 0). The folder is rewritten on every build, like data/c/.
+const cardSet = new Set();
+for (const decksOf of findOut.values()) for (const [, names] of decksOf) for (const n of names) cardSet.add(n);
+const cardNames = [...cardSet].sort((x, y) => x.localeCompare(y));
+const cardIx = new Map(cardNames.map((n, i) => [n, i]));
+await rm(OUT + 'f/', { recursive: true, force: true });
+await mkdir(OUT + 'f/', { recursive: true });
+let findBytes = 0;
+for (const [id, decksOf] of findOut) {
+  const d = decksOf.map(([row, names]) => {
+    let prev = 0;
+    return [row, ...names.map((n) => cardIx.get(n)).sort((x, y) => x - y).map((v) => { const diff = v - prev; prev = v; return diff; })];
+  });
+  const text = JSON.stringify({ v: 1, d });
+  await writeFile(`${OUT}f/${id}.json`, text);
+  findBytes += text.length;
+}
+await writeFile(OUT + 'cards.json', JSON.stringify({ v: 1, n: cardNames }));
+console.log(`Find card: ${cardNames.length} distinct cards, ${findOut.size} commander files in data/f/ (${(findBytes / 1e6).toFixed(1)} MB)`);
 await mkdir(OUT + 'c/', { recursive: true });
 for (const [id, list] of entriesOut) await writeFile(`${OUT}c/${id}.json`, JSON.stringify(list));
 await writeFile(OUT + 'players.json', JSON.stringify({ schema: 1, generated: index.generated, t: playersOut }));
