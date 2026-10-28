@@ -2,7 +2,7 @@
 // of its meta share (or conversion) over time for the chosen region and an optional second one, and its numbers: conversion, seat
 // win rates... It uses the window's own filters (region, compare with, players, min. entries, period), so everything stays in step.
 // regional-ui.js owns the state and hands it over through the function given to initCommander().
-import { getEvents, loadSeats, loadEntries, loadSpicy, artImgs } from './data.js';
+import { getEvents, loadSeats, loadEntries, loadSpicy, loadFind, loadCards, artImgs } from './data.js';
 import { deckUrl } from './tournament.js';
 import { $, esc, fmtDate, place as placeName, ord } from './utils.js';
 import { colorName, regionLabel, MIN_CONV_DECKS } from './regional.js';
@@ -182,7 +182,7 @@ function entriesFor(id) {
   loadEntries(id).then((rows) => {
     entriesLoaded.set(id, rows);
     const v = getContext().view;
-    if (v.commander === id && (v.dTab === 'tournaments' || v.dTab === 'pilots' || v.dTab === 'spicy')) renderCommander();
+    if (v.commander === id && (v.dTab === 'tournaments' || v.dTab === 'pilots' || v.dTab === 'spicy' || v.dTab === 'find')) renderCommander();
   });
   return 'loading';
 }
@@ -351,7 +351,95 @@ function spicyTab(c, id) {
   return { html, sub };
 }
 
-const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['pilots', 'Top Pilots'], ['regions', 'Region performance'], ['spicy', 'Spicy cards']];
+// ---- The "Find card" tab: type a card, see the decks of this commander that play it ----
+// data/f/<id>.json lists, for every deck with a card list, the cards it plays (indexes into data/cards.json, stored as differences).
+const findLoaded = new Map(); // commander id -> { names, byCard: Map(card index -> rows of data/c/<id>.json), withList: Set(rows) }, null (no file) or 'loading'
+function findFor(id) {
+  const have = findLoaded.get(id);
+  if (have !== undefined) return have;
+  findLoaded.set(id, 'loading');
+  Promise.all([loadFind(id), loadCards()]).then(([f, cards]) => {
+    let data = null;
+    if (f && cards && Array.isArray(f.d) && Array.isArray(cards.n)) {
+      const byCard = new Map(), withList = new Set();
+      for (const d of f.d) {
+        const row = d[0];
+        withList.add(row);
+        let ix = 0;
+        for (let k = 1; k < d.length; k++) { ix += d[k]; (byCard.get(ix) || byCard.set(ix, []).get(ix)).push(row); }
+      }
+      data = { names: cards.n, byCard, withList };
+    }
+    findLoaded.set(id, data);
+    const v = getContext().view;
+    if (v.commander === id && v.dTab === 'find') renderCommander();
+  });
+  return 'loading';
+}
+const norm = (x) => String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+let fCards = []; // the cards of the commander's decks in scope: [{ name, key, n (decks) }], for the suggestions
+const SUGGESTIONS = 8;
+
+function suggest(query) {
+  const q = norm(query.trim());
+  if (!q) return [];
+  const scored = [];
+  for (const c of fCards) {
+    const at = c.key.indexOf(q);
+    if (at < 0) continue;
+    scored.push({ c, rank: at === 0 ? 0 : c.key[at - 1] === ' ' ? 1 : 2 });
+  }
+  return scored.sort((a, b) => a.rank - b.rank || b.c.n - a.c.n || a.c.name.localeCompare(b.c.name)).slice(0, SUGGESTIONS).map((x) => x.c);
+}
+
+function findTab(c, id) {
+  const { meta, view } = c;
+  const where = regionLabel(meta, view.region);
+  const commander = meta.commanders[id].join(' / ');
+  const sub = `${commander}: find a card in the decklists in ${where}.`;
+  const entries = entriesFor(id);
+  const data = findFor(id);
+  if (entries === 'loading' || data === 'loading') return { html: '<p class="rg-dnote">Loading card lists…</p>', sub };
+  if (entries === null || data === null) return { html: "<p class=\"rg-dnote\">Card lists aren't available for this commander yet: they appear after the data is rebuilt.</p>", sub };
+  const scope = sortedEntries(c, entries).filter((e) => data.withList.has(e.idx)); // decks with a card list that pass the filters
+  const decks = new Map(scope.map((e) => [e.idx, e]));
+  fCards = [];
+  for (const [ix, rows] of data.byCard) {
+    const n = rows.reduce((k, r) => k + (decks.has(r) ? 1 : 0), 0);
+    if (n) fCards.push({ name: data.names[ix], key: norm(data.names[ix]), n, ix });
+  }
+  const search = `<div class="rg-find">
+    <input id="rg-fq" type="search" value="${esc(view.fQuery || '')}" placeholder="Card name, e.g. Rhystic Study" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="rg-fsug" aria-autocomplete="list" aria-label="Card name">
+    <ul id="rg-fsug" role="listbox" hidden></ul></div>`;
+  if (!scope.length) return { html: `${search}<p class="rg-dnote">No decks with a card list in ${esc(where)} with the filters above.</p>`, sub };
+  const card = view.fCard && fCards.find((x) => x.name === view.fCard);
+  if (!view.fCard) return { html: `${search}<p class="rg-dnote">Type a card name to see which of the ${plural(scope.length, 'deck')} with a card list in ${esc(where)} play it. Basic lands aren't recorded.</p>`, sub };
+  if (!card) return { html: `${search}<p class="rg-dnote">No deck of ${esc(commander)} in ${esc(where)} with the filters above plays ${esc(view.fCard)}.</p>`, sub };
+  const mine = scope.filter((e) => new Set(data.byCard.get(card.ix)).has(e.idx));
+  tList = mine; // best finish first, like the Tournaments tab (same "Show more")
+  tShown = 0;
+  const elig = scope.filter((e) => e.t.tc > 0), eligMine = mine.filter((e) => e.t.tc > 0);
+  const base = elig.length ? (elig.filter((e) => e.place <= e.t.tc).length / elig.length) * 100 : null;
+  const cut = eligMine.filter((e) => e.place <= e.t.tc).length;
+  const conv = eligMine.length ? (cut / eligMine.length) * 100 : null;
+  const convLine = conv === null
+    ? '<p class="rg-sstat"><i>Conversion</i><b>–</b><small>none of these decks was in a tournament with a top cut</small></p>'
+    : `<p class="rg-sstat"><i>Conversion</i><b>${pct(conv)}</b>${base === null ? '' : ` <em class="${conv - base >= 0 ? 'up' : 'down'}" title="${PP_TIP}">(${diff(conv - base)})</em>`}<small>${cut} of ${eligMine.length} decks${base === null ? '' : ` · deck average ${pct(base)}`}</small></p>`;
+  const html = `${search}
+    <div class="rg-spicy rg-fhead">
+      <a class="rg-scard" href="${esc(scryfallPage(card.name))}" target="_blank" rel="noopener" aria-label="${esc(card.name)} on Scryfall"><img src="${esc(cardImage(card.name))}" alt="${esc(card.name)}" width="146" height="204" decoding="async"></a>
+      <div class="rg-sbody">
+        <h4>${esc(card.name)}</h4>
+        <p class="rg-sstat"><i>Play rate</i><b>${pct((mine.length / scope.length) * 100)}</b><small>${mine.length.toLocaleString()} of ${plural(scope.length, 'deck')} with a card list</small></p>
+        ${convLine}
+      </div>
+    </div>
+    <p class="rg-dnote">${plural(mine.length, 'deck')} of ${esc(commander)} in ${esc(where)} play ${esc(card.name)}. Best finish first; click one to open the decklist on TopDeck.gg.</p>
+    <ol id="rg-tlist" class="rg-tlist"></ol><button id="rg-tmore" type="button" class="rg-tmore" hidden>Show more</button>`;
+  return { html, sub, after: showMoreTournaments };
+}
+
+const TABS = [['data', 'Commander data'], ['tournaments', 'Tournaments'], ['pilots', 'Top Pilots'], ['regions', 'Region performance'], ['spicy', 'Spicy cards'], ['find', 'Find card']];
 
 export function renderCommander() {
   const c = getContext();
@@ -359,7 +447,7 @@ export function renderCommander() {
   const id = view.commander;
   if (id === null || !meta.commanders[id]) return;
   const tab = TABS.some(([key]) => key === view.dTab) ? view.dTab : 'data';
-  const body = (tab === 'tournaments' ? tournamentsTab : tab === 'pilots' ? pilotsTab : tab === 'regions' ? regionsTab : tab === 'spicy' ? spicyTab : dataTab)(c, id);
+  const body = (tab === 'tournaments' ? tournamentsTab : tab === 'pilots' ? pilotsTab : tab === 'regions' ? regionsTab : tab === 'spicy' ? spicyTab : tab === 'find' ? findTab : dataTab)(c, id);
   $('rg-sub').textContent = body.sub;
   // The back button, banner and tab bar are built once per commander; changing tab or filter only swaps the panel under them.
   // (Rebuilding everything made the banner art reload and the whole window flicker.)
@@ -406,6 +494,7 @@ export function showCommander(id) {
   $('rg-detail').dataset.id = ''; // a new shell for this commander
   view.commander = id;
   view.dTab = 'data'; // every commander opens on its data
+  view.fQuery = ''; view.fCard = null; // and an empty card search
   $('rg-modal').classList.add('detail');
   scroller.scrollTop = 0; card.scrollTop = 0;
   renderCommander();
@@ -474,7 +563,91 @@ export function initCommander(contextFn, onBack) {
     detail.addEventListener('pointerout', (e) => { if (e.target.closest('.rg-scard') && !e.relatedTarget?.closest?.('.rg-scard')) hide(); });
     detail.addEventListener('scroll', hide, true);
     addEventListener('blur', hide);
+
+    // Banner: hovering the commander's name fades in the commander's card over the window (both cards, side by side, for partners). The cards are Scryfall's
+    // large images, taken from the banner's own art URL (".../art_crop/..." -> ".../large/..."), so nothing else is requested for the page.
+    const cards = document.createElement('div');
+    cards.className = 'rg-bannercards';
+    document.body.appendChild(cards);
+    let bcur = null, btimer = 0;
+    const bhide = () => { clearTimeout(btimer); bcur = null; cards.classList.remove('on'); };
+    const bshow = (banner, urls) => {
+      const imgs = urls.map((u) => { const i = new Image(); i.alt = ''; i.src = u; return i; });
+      Promise.all(imgs.map((i) => (i.decode ? i.decode() : Promise.resolve()).catch(() => {}))).then(() => {
+        if (bcur !== banner) return; // the pointer has moved on
+        const two = imgs.length > 1;
+        const w = two ? 250 : 300, h = two ? 348 : 418;
+        cards.style.setProperty('--cw', `${w}px`);
+        cards.style.setProperty('--ch', `${h}px`);
+        cards.replaceChildren(...imgs);
+        const host = document.querySelector('.rg-card')?.getBoundingClientRect() ?? banner.getBoundingClientRect();
+        const total = imgs.length * w + (imgs.length - 1) * 14;
+        cards.style.left = `${Math.max(8, Math.min(innerWidth - total - 8, host.left + host.width / 2 - total / 2))}px`;
+        cards.style.top = `${Math.max(8, Math.min(innerHeight - h - 8, innerHeight / 2 - h / 2))}px`;
+        cards.classList.add('on');
+      });
+    };
+    detail.addEventListener('pointerover', (e) => {
+      const name = e.target.closest('.rg-banner h3'); // only the name triggers it, so the rest of the banner stays free
+      const banner = name?.closest('.rg-banner');
+      if (!banner || banner === bcur) return;
+      const urls = [...banner.querySelectorAll('.rg-banner-art img')].map((i) => i.currentSrc || i.src).filter((u) => u.includes('/art_crop/')).map((u) => u.replace('/art_crop/', '/large/'));
+      if (!urls.length) return;
+      bhide();
+      bcur = banner;
+      btimer = setTimeout(() => bshow(banner, urls), DELAY);
+    });
+    detail.addEventListener('pointerout', (e) => { if (e.target.closest('.rg-banner h3') && !e.relatedTarget?.closest?.('.rg-banner h3')) bhide(); });
+    detail.addEventListener('scroll', bhide, true);
+    detail.addEventListener('pointerdown', bhide);
+    addEventListener('blur', bhide);
   }
+  // Find card: suggestions while typing, arrows + Enter or a click to pick one
+  const fsug = () => document.getElementById('rg-fsug'), fq = () => document.getElementById('rg-fq');
+  const closeSug = () => { const u = fsug(); if (u) { u.hidden = true; u.innerHTML = ''; } fq()?.setAttribute('aria-expanded', 'false'); };
+  const pick = (name) => { const { view } = getContext(); view.fCard = name; view.fQuery = name; renderCommander(); };
+  $('rg-detail').addEventListener('input', (e) => {
+    if (e.target.id !== 'rg-fq') return;
+    const { view } = getContext();
+    view.fQuery = e.target.value;
+    const list = suggest(e.target.value);
+    const u = fsug();
+    if (!list.length) {
+      u.hidden = !e.target.value.trim();
+      u.innerHTML = e.target.value.trim() ? '<li class="none">No card with that name in these decks</li>' : '';
+      e.target.setAttribute('aria-expanded', String(!u.hidden));
+      return;
+    }
+    u.innerHTML = list.map((x, i) => `<li role="option" data-name="${esc(x.name)}" id="rg-fs${i}"><span>${esc(x.name)}</span><small>${plural(x.n, 'deck')}</small></li>`).join('');
+    u.hidden = false;
+    e.target.setAttribute('aria-expanded', 'true');
+  });
+  $('rg-detail').addEventListener('keydown', (e) => {
+    if (e.target.id !== 'rg-fq') return;
+    const u = fsug();
+    const items = [...u.querySelectorAll('li[data-name]')];
+    const at = items.findIndex((li) => li.classList.contains('on'));
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!items.length) return;
+      e.preventDefault();
+      items[at]?.classList.remove('on');
+      const next = items[(at + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length];
+      next.classList.add('on');
+      e.target.setAttribute('aria-activedescendant', next.id);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const chosen = items[at] || items[0];
+      if (chosen) pick(chosen.dataset.name);
+    } else if (e.key === 'Escape' && !u.hidden) {
+      e.stopPropagation(); // closes the suggestions only; a second Esc goes back as usual
+      closeSug();
+    }
+  });
+  $('rg-detail').addEventListener('click', (e) => {
+    const li = e.target.closest('#rg-fsug li[data-name]');
+    if (li) return pick(li.dataset.name);
+    if (!e.target.closest('.rg-find')) closeSug();
+  });
   $('rg-detail').addEventListener('click', (e) => {
     if (e.target.closest('.rg-back')) return onBack();
     const tab = e.target.closest('[data-tab]');
