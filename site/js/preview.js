@@ -85,6 +85,7 @@ export const setShownList = (list) => { shownList = list; };
 export function initPreview() {
   loadArt().then((m) => { artMap = m; });
   $('area-list').addEventListener('mouseover', (e) => {
+    if (HOVER_PREVIEW === 'row') return; // the winner's art is always on the rows now (list.js), so there is nothing to show on hover
     const b = e.target.closest('button[data-i]');
     if (!b || b === peekFor) return;
     hidePeek();

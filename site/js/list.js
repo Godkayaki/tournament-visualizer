@@ -4,6 +4,7 @@ import { state } from './state.js';
 import { areaName } from './geo.js';
 import { openPanel, closePanel } from './panels.js';
 import { openTournament } from './tournament.js';
+import { loadArt, artImgs } from './data.js';
 import { hidePeek, preloadRows, setShownList } from './preview.js';
 
 // Tournament size tiers (by number of players): the colored strip on the left of each tournament in the list.
@@ -58,6 +59,31 @@ function renderList() {
   };
   $('area-list').scrollTop = 0;
   preloadRows(0, 10);
+  addRowArt(list);
+}
+
+// The winning commander's art sits behind every row, always (winners come with the index: see addWinners in fetch-data.mjs). It is added once
+// the art map has arrived, so the list itself never waits for it; each image fades in when it has loaded (lazy: only rows near the screen).
+let artToken = 0;
+function addRowArt(list) {
+  const token = ++artToken;
+  loadArt().then((art) => {
+    if (token !== artToken) return; // another list was drawn meanwhile
+    $('area-list').querySelectorAll('button[data-i]').forEach((btn) => {
+      const t = list[+btn.dataset.i];
+      if (!t?.w?.length) return;
+      const pics = artImgs(t.w, art, 'loading="lazy" decoding="async"');
+      if (!pics) return;
+      const el = document.createElement('span');
+      el.className = 'row-art';
+      el.innerHTML = pics;
+      btn.prepend(el);
+      el.querySelectorAll('img').forEach((img) => {
+        const ok = () => img.classList.add('ok');
+        if (img.complete && img.naturalWidth) ok(); else img.addEventListener('load', ok, { once: true });
+      });
+    });
+  });
 }
 
 export const closeArea = () => { hidePeek(); closePanel($('area')); areaKind = ''; syncBtns(); };

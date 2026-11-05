@@ -106,14 +106,18 @@ body:has(:is(#modal, #rg-modal, #keys-modal):not([hidden])) :is(#filters, #stats
 @media (hover: none) { #peek { display: none; } }
 @media (prefers-reduced-motion: reduce) { #peek { transition: none; } }
 
-/* Winner preview, "row" mode: the winner's art fades in behind the hovered tournament */
-#area li button { position: relative; isolation: isolate; overflow: hidden; }
-.row-art { position: absolute; inset: 0; z-index: -1; display: flex; opacity: 0; transition: opacity .2s ease; pointer-events: none; }
-.row-art.on { opacity: 1; }
-.row-art img { flex: 1; min-width: 0; height: 100%; object-fit: cover; object-position: center 22%; }
-.row-art::after { content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(13, 17, 23, .95) 0%, rgba(13, 17, 23, .75) 45%, rgba(13, 17, 23, .25) 100%); }
-@media (prefers-reduced-motion: reduce) { .row-art { transition: none; } }
+/* The winner's art behind every tournament in the list (js/list.js). Dimmed so the text stays readable; hovering or focusing a row lights it up. */
+#area li button { position: relative; isolation: isolate; overflow: hidden; transition: background-color .2s ease; }
+.row-art { position: absolute; inset: 0; z-index: -1; display: flex; pointer-events: none; }
+.row-art img { flex: 1; min-width: 0; height: 100%; object-fit: cover; object-position: center 22%; opacity: 0; filter: brightness(.85);
+  transition: opacity .3s ease, filter .2s ease; }
+.row-art img.ok { opacity: 1; }
+.row-art::after { content: ""; position: absolute; inset: 0; transition: opacity .2s ease;
+  background: linear-gradient(90deg, rgba(13, 17, 23, .96) 0%, rgba(13, 17, 23, .82) 50%, rgba(13, 17, 23, .5) 100%); }
+#area li button:is(:hover, :focus-visible) { background-color: #1c232d; }
+#area li button:is(:hover, :focus-visible) .row-art img { filter: brightness(1.15) saturate(1.1); }
+#area li button:is(:hover, :focus-visible) .row-art::after { opacity: .45; }
+@media (prefers-reduced-motion: reduce) { .row-art img, .row-art::after, #area li button { transition: none; } }
 
 /* Tier strip: fixed-width, rounded bar on the left of each tournament in the list, inset 6px from the row's borders
    (thresholds: TIERS in js/list.js). Grey is dark and silver light so they stay apart; platinum is League of Legends' teal. */
